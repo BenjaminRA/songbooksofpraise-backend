@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -62,7 +63,7 @@ func (n *Song) GetSongByID(id string) []Song {
 		{"$match": bson.M{"_id": object_id}},
 		{"$lookup": bson.M{
 			"from":         "Categories",
-			"localField":   "categoriesid",
+			"localField":   "categories_id",
 			"foreignField": "_id",
 			"as":           "categories",
 		}},
@@ -75,6 +76,7 @@ func (n *Song) GetSongByID(id string) []Song {
 
 	for cursor.Next(context.TODO()) {
 		elem := Song{}
+		fmt.Println(cursor.Current.Elements())
 		cursor.Decode(&elem)
 		result = append(result, elem)
 	}

@@ -77,6 +77,10 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		}
 	}
 
+	if himno.ID > 517 {
+		himno.ID = himno.ID - 517
+	}
+
 	return models.Song{
 		ID:           primitive.NewObjectID(),
 		Number:       himno.ID,
@@ -288,6 +292,50 @@ func Migrate() {
 	}
 
 	db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+
+	songbook = models.Songbook{
+		ID:          primitive.NewObjectID(),
+		Title:       "Coros",
+		Language:    "es",
+		Description: "...",
+		Country: models.Country{
+			Country: "Chile",
+			Code:    "CL",
+		},
+	}
+
+	songbook_result, _ = db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+
+	// Getting all coros
+	himnos, _ = new(models.Himno).GetCoros()
+
+	tema_coros := models.Tema{
+		InsertedID: primitive.NewObjectID(),
+		Tema:       "Todos",
+		Himnos:     himnos,
+	}
+
+	db.Collection("Categories").InsertOne(context.TODO(), models.Category{
+		ID:         tema_coros.InsertedID,
+		SongbookID: songbook_result.InsertedID.(primitive.ObjectID),
+		Category:   tema_coros.Tema,
+	})
+
+	// Getting verses of coros
+	for i, himno := range himnos {
+		parrafos, _ := new(models.Parrafo).GetParrafos(himno.ID)
+		himnos[i].Parrafos = parrafos
+		fmt.Println(parrafos)
+
+		db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
+			&himnos[i],
+			songbook_result.InsertedID.(primitive.ObjectID),
+			[]primitive.ObjectID{
+				tema_coros.InsertedID,
+			},
+		))
+	}
+
 	// result, _ := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
 
 	// for i := 0; i < len(temas); i++ {
