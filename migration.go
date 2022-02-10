@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"github.com/BenjaminRA/himnario-backend/db/sqlite"
@@ -159,7 +160,7 @@ func uploadFile(path string) primitive.ObjectID {
 		fmt.Println("No se encontró el archivo:", path)
 	}
 
-	id = mongodb.UploadFile(data, fmt.Sprintf("%v.jpg", primitive.NewObjectID().Hex()))
+	id = mongodb.UploadFile(data, fmt.Sprintf("%v.%v", primitive.NewObjectID().Hex(), filepath.Ext(path)))
 
 	return id
 }
