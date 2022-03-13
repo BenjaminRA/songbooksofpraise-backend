@@ -170,10 +170,6 @@ func Migrate() {
 	mongodb.CleanDatabase()
 	mongodb.InitDatabase()
 
-	// Closing resources
-	// defer sqlite.Disconnect()
-	// defer mongodb.Disconnect()
-
 	db := mongodb.GetMongoDBConnection()
 
 	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
