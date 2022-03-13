@@ -41,12 +41,11 @@ func Disconnect() {
 func InitDatabase() {
 	db := GetMongoDBConnection()
 
-	// db.CreateCollection(context.TODO(), "Categories")
-	// db.CreateCollection(context.TODO(), "Countries")
-	// db.CreateCollection(context.TODO(), "Languages")
+	db.CreateCollection(context.TODO(), "Categories")
+	db.CreateCollection(context.TODO(), "Countries")
+	db.CreateCollection(context.TODO(), "Languages")
 	db.CreateCollection(context.TODO(), "Songs")
 	db.CreateCollection(context.TODO(), "Songbooks")
-	// db.CreateCollection(context.TODO(), "Verses")
 }
 
 func UploadFile(data []byte, filename string) primitive.ObjectID {

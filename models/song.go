@@ -59,7 +59,7 @@ func (n *Song) GetAllSongs() []Song {
 	return result
 }
 
-func (n *Song) GetSongByID(id string) []Song {
+func (n *Song) GetSongByID(id string) Song {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -73,7 +73,7 @@ func (n *Song) GetSongByID(id string) []Song {
 			"localField":   "categories_id",
 			"foreignField": "_id",
 			"pipeline": []bson.M{
-				{"$project": bson.M{"category": 1}},
+				{"$project": bson.M{"category": 1, "all": 1}},
 			},
 			"as": "categories",
 		}},
@@ -90,7 +90,7 @@ func (n *Song) GetSongByID(id string) []Song {
 		result = append(result, elem)
 	}
 
-	return result
+	return result[0]
 }
 
 func (n *Song) GetMusicSheet(id string) ([]byte, string) {

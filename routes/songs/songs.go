@@ -16,12 +16,13 @@ func GetSongs(c *gin.Context) {
 func GetSongsById(c *gin.Context) {
 	id := c.Param("id")
 
-	songs := new(models.Song).GetSongByID(id)
+	song := new(models.Song).GetSongByID(id)
 
-	if len(songs) == 0 {
-		c.IndentedJSON(http.StatusNotFound, songs)
+	if song.ID.Hex() == "000000000000000000000000" {
+		c.IndentedJSON(http.StatusNotFound, song)
+	} else {
+		c.IndentedJSON(http.StatusOK, song)
 	}
-	c.IndentedJSON(http.StatusOK, songs)
 
 }
 

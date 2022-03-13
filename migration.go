@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
-	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 	"github.com/BenjaminRA/himnario-backend/models"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tcolgate/mp3"
@@ -171,20 +171,56 @@ func Migrate() {
 	mongodb.InitDatabase()
 
 	// Closing resources
-	defer sqlite.Disconnect()
-	defer mongodb.Disconnect()
+	// defer sqlite.Disconnect()
+	// defer mongodb.Disconnect()
 
 	db := mongodb.GetMongoDBConnection()
 
+	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
+		"code":        "ES",
+		"reader_code": "ES",
+		"language":    "Español",
+	})
+
+	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
+		"code":        "ES",
+		"reader_code": "EN",
+		"language":    "Spanish",
+	})
+
+	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
+		"code":        "EN",
+		"reader_code": "ES",
+		"language":    "Ingles",
+	})
+
+	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
+		"code":        "EN",
+		"reader_code": "EN",
+		"language":    "English",
+	})
+
+	db.Collection("Countries").InsertOne(context.TODO(), bson.M{
+		"code":        "CL",
+		"reader_code": "EN",
+		"country":     "Chile",
+	})
+
+	db.Collection("Countries").InsertOne(context.TODO(), bson.M{
+		"code":        "CL",
+		"reader_code": "ES",
+		"country":     "Chile",
+	})
+
 	songbook := models.Songbook{
-		ID:          primitive.NewObjectID(),
-		Title:       "Himnos y Cánticos del Evangelio",
-		Language:    "es",
-		Description: "...",
-		Country: models.Country{
-			Country: "Chile",
-			Code:    "CL",
-		},
+		ID:           primitive.NewObjectID(),
+		Title:        "Himnos y Cánticos del Evangelio",
+		LanguageCode: "ES",
+		Description:  "...",
+		CountryCode:  "CL",
+		Numeration:   true,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	songbook_result, _ := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
@@ -204,10 +240,8 @@ func Migrate() {
 	// Get hymns categories
 	himnos_category := map[int]([]primitive.ObjectID){}
 
-	todos_id := primitive.NewObjectID()
-
 	temas = append(temas, models.Tema{
-		InsertedID: todos_id,
+		InsertedID: primitive.NewObjectID(),
 		Tema:       "Todos",
 		Himnos:     himnos,
 	})
@@ -227,82 +261,60 @@ func Migrate() {
 			temas[i].SubTemas[j].InsertedID = primitive.NewObjectID()
 			temas[i].SubTemas[j].Himnos, _ = temas[i].SubTemas[j].GetSubTemaHimnos()
 			for k := 0; k < len(temas[i].SubTemas[j].Himnos); k++ {
-				addCategoryToHimno(&himnos_category, temas[i].Himnos[j].ID, temas[i].InsertedID)
+				addCategoryToHimno(&himnos_category, temas[i].SubTemas[j].Himnos[k].ID, temas[i].SubTemas[j].InsertedID)
 				temas[i].SubTemas[j].Himnos[k].Parrafos, _ = new(models.Parrafo).GetParrafos(temas[i].SubTemas[j].Himnos[k].ID)
 			}
 		}
 
 	}
 
+	var todos_id primitive.ObjectID
 	for _, tema := range temas {
-
+		if tema.Tema == "Todos" {
+			todos_id = tema.InsertedID
+		}
 		db.Collection("Categories").InsertOne(context.TODO(), models.Category{
 			ID:         tema.InsertedID,
+			All:        (tema.Tema == "Todos"),
 			SongbookID: songbook_result.InsertedID.(primitive.ObjectID),
 			Category:   tema.Tema,
 		})
 
-		children := []primitive.ObjectID{}
+		// children := []primitive.ObjectID{}
 		if len(tema.SubTemas) > 0 {
 			for _, subtema := range tema.SubTemas {
-				children = append(children, subtema.InsertedID)
+				// children = append(children, subtema.InsertedID)
 				db.Collection("Categories").InsertOne(context.TODO(), models.Category{
 					ID:         subtema.InsertedID,
+					All:        (subtema.Tema == "Todos"),
 					Category:   subtema.Tema,
 					SongbookID: songbook_result.InsertedID.(primitive.ObjectID),
 					ParentID:   tema.InsertedID,
 				})
-
-				for _, subtema_himno := range subtema.Himnos {
-					if !checkIfExists(db, &subtema_himno) {
-						db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
-							&subtema_himno,
-							songbook_result.InsertedID.(primitive.ObjectID),
-							himnos_category[subtema_himno.ID],
-						))
-					}
-				}
 			}
 		}
-
-		for _, himno := range tema.Himnos {
-			if !checkIfExists(db, &himno) {
-				db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
-					&himno,
-					songbook_result.InsertedID.(primitive.ObjectID),
-					himnos_category[himno.ID],
-				))
-			}
-		}
-		db.Collection("Categories").UpdateByID(context.TODO(), tema.InsertedID, bson.M{
-			"$set": bson.M{
-				"children_ID": children,
-			},
-		})
 	}
 
 	for _, himno := range himnos {
 		addCategoryToHimno(&himnos_category, himno.ID, todos_id)
-		if !checkIfExists(db, &himno) {
-			db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
-				&himno,
-				songbook_result.InsertedID.(primitive.ObjectID),
-				himnos_category[himno.ID],
-			))
-		}
+		db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
+			&himno,
+			songbook_result.InsertedID.(primitive.ObjectID),
+			himnos_category[himno.ID],
+		))
 	}
 
 	db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
 
 	songbook = models.Songbook{
-		ID:          primitive.NewObjectID(),
-		Title:       "Coros",
-		Language:    "es",
-		Description: "...",
-		Country: models.Country{
-			Country: "Chile",
-			Code:    "CL",
-		},
+		ID:           primitive.NewObjectID(),
+		Title:        "Coros",
+		Numeration:   false,
+		LanguageCode: "ES",
+		Description:  "...",
+		CountryCode:  "CL",
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	songbook_result, _ = db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
@@ -318,6 +330,7 @@ func Migrate() {
 
 	db.Collection("Categories").InsertOne(context.TODO(), models.Category{
 		ID:         tema_coros.InsertedID,
+		All:        true,
 		SongbookID: songbook_result.InsertedID.(primitive.ObjectID),
 		Category:   tema_coros.Tema,
 	})
@@ -326,7 +339,6 @@ func Migrate() {
 	for i, himno := range himnos {
 		parrafos, _ := new(models.Parrafo).GetParrafos(himno.ID)
 		himnos[i].Parrafos = parrafos
-		fmt.Println(parrafos)
 
 		db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
 			&himnos[i],
