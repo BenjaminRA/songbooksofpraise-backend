@@ -2,7 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
+	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
@@ -18,7 +21,25 @@ func GetMongoDBConnection() *mongo.Database {
 	}
 
 	var err error
-	mongodb, err = mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false"))
+	err = godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
+	credential := options.Credential{
+		Username: os.Getenv("DB_USERNAME"),
+		Password: os.Getenv("DB_PASSWORD"),
+	}
+
+	mongodb, err = mongo.Connect(
+		context.TODO(),
+		options.Client().ApplyURI(
+			fmt.Sprintf("mongodb://%s:%s/?readPreference=primary&appname=songbooks_of_praise_backend&directConnection=true&ssl=false",
+				os.Getenv("DB_HOST"),
+				os.Getenv("DB_PORT"),
+			),
+		).SetAuth(credential),
+	)
 	if err != nil {
 		panic(err)
 	}
