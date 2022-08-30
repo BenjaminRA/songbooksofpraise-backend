@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Helper function to recursively print the Temas.
 func printTemas(tema models.Tema, counter ...int) {
 	if len(counter) == 0 {
 		fmt.Println("Tema:", tema.Tema)
@@ -40,18 +41,21 @@ func printTemas(tema models.Tema, counter ...int) {
 	}
 }
 
+// Converts an himno model from the old database to the new Song model.
+//
+// It extracts the music_sheet and voices of hymns and stores them in the new database with the new model.
 func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories []primitive.ObjectID) models.Song {
 	chords := true
-	new_verses := []models.Verse{}
-	for idx, parrafo := range himno.Parrafos {
-		if chords {
-			chords = parrafo.Acordes != ""
+	new_verses := ""
+	number := 1
+	for _, parrafo := range himno.Parrafos {
+		if parrafo.Coro {
+			new_verses += "{Chorus}\n"
+		} else {
+			new_verses += fmt.Sprintf("{Verse %d}\n", number)
+			number++
 		}
-		new_verses = append(new_verses, models.Verse{
-			Text:        parrafo.Parrafo,
-			Chorus:      parrafo.Coro,
-			OrderNumber: idx + 1,
-		})
+		new_verses += fmt.Sprintf("%s\n\n", parrafo.Parrafo)
 	}
 
 	music_sheet := uploadFile(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
@@ -78,6 +82,7 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		}
 	}
 
+	// If the himno id is greater than 517 in the old database, it means is a Coro
 	if himno.ID > 517 {
 		himno.ID = himno.ID - 517
 	}
@@ -87,7 +92,7 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		Number:       himno.ID,
 		Title:        himno.Titulo,
 		Chords:       chords,
-		Verses:       new_verses,
+		Text:         new_verses,
 		SongbookID:   songbook_id,
 		CategoriesID: categories,
 		MusicSheet:   music_sheet,
@@ -99,6 +104,7 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 	}
 }
 
+// Checks if whether the element ID exists in the array.
 func contains(array []primitive.ObjectID, element primitive.ObjectID) bool {
 	for _, el := range array {
 		if el == element {
@@ -109,6 +115,7 @@ func contains(array []primitive.ObjectID, element primitive.ObjectID) bool {
 	return false
 }
 
+// Checks if a given song has already been added to the database.
 func checkIfExists(db *mongo.Database, song *models.Himno) bool {
 	itemCount, err := db.Collection("Songs").CountDocuments(context.TODO(), bson.M{"number": song.ID})
 	if err != nil {
@@ -118,6 +125,7 @@ func checkIfExists(db *mongo.Database, song *models.Himno) bool {
 	return itemCount > 0
 }
 
+// Calculates the total duration in seconds of an MP3 file.
 func getFileDuration(path string) float64 {
 	t := 0.0
 
@@ -144,15 +152,21 @@ func getFileDuration(path string) float64 {
 	return t
 }
 
+// Adds a category to a specific himno in the himnos_tema dictionary.
 func addCategoryToHimno(himnos_tema *map[int]([]primitive.ObjectID), himno_id int, category_id primitive.ObjectID) {
+	// If the himno doesn't exists in the himnos_tema dictionary, we initialize the key with an empty array as a value
 	if _, found := (*himnos_tema)[himno_id]; !found {
 		(*himnos_tema)[himno_id] = []primitive.ObjectID{}
 	}
+
+	// If the array corresponding to the value in the himnos_tema dictionary, check whether the category has been added to the array.
+	// If not, add it to the array.
 	if !contains((*himnos_tema)[himno_id], category_id) {
 		(*himnos_tema)[himno_id] = append((*himnos_tema)[himno_id], category_id)
 	}
 }
 
+// Uploads a file to the mongodb database
 func uploadFile(path string) primitive.ObjectID {
 	data, err := ioutil.ReadFile(path)
 	id := primitive.ObjectID{}
@@ -344,82 +358,4 @@ func Migrate() {
 			},
 		))
 	}
-
-	// result, _ := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
-
-	// for i := 0; i < len(temas); i++ {
-	// 	temas[i].InsertedID = primitive.NewObjectID()
-	// 	for j := 0; j < len(temas[i].Himnos); j++ {
-	// 		// temas[i].Himnos[j] = HimnoToSong(temas[i].Himnos[j], result.InsertedID, temas[i].InsertedID)
-	// 	}
-
-	// 	for j := 0; j < len(temas[i].SubTemas); j++ {
-	// 		temas[i].SubTemas[j].Himnos, _ = temas[i].SubTemas[j].GetSubTemaHimnos()
-	// 		for k := 0; k < len(temas[i].SubTemas[j].Himnos); k++ {
-	// 		}
-	// 	}
-
-	// }
-
-	// cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
-	// 	{"$match": bson.M{"parent_id": primitive.Null{}}},
-	// 	{"$graphLookup": bson.M{
-	// 		"from":             "Categories",
-	// 		"startWith":        "$parent_id",
-	// 		"connectFromField": "parent_id",
-	// 		"connectToField":   "_id",
-	// 		"as":               "parent",
-	// 	}},
-	// 	{"$graphLookup": bson.M{
-	// 		"from":             "Categories",
-	// 		"startWith":        "$_id",
-	// 		"connectFromField": "children",
-	// 		"connectToField":   "_id",
-	// 		"restrictSearchWithMatch": bson.M{
-	// 			"children": bson.M{
-	// 				"$not": bson.M{
-	// 					"$size": 0,
-	// 				},
-	// 			},
-	// 		},
-	// 		"as": "sub_categories",
-	// 	}},
-	// 	{"$project": bson.M{"_id": 0, "category": 1, "parent": 1, "sub_categories": 1}},
-	// 	{"$project": bson.M{
-	// 		"categories.category": bson.M{
-	// 			"$filter": bson.M{
-	// 				"input": "$categories.category",
-	// 				"as":    "category",
-	// 				"cond": bson.M{
-	// 					"$eq": bson.A{"$$category", "Todos"},
-	// 				},
-	// 			},
-	// 		},
-	// 	}},
-	// })
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// for cursor.Next(context.TODO()) {
-	// 	var element interface{}
-	// 	err := cursor.Decode(&element)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	// fmt.Println(element)
-	// }
-
-	// coros, _ := new(models.Himno).GetCoros()
-	// for idx, coro := range coros {
-	// 	// fmt.Println("ID:", coro.ID, "Título:", coro.Titulo)
-	// 	parrafos, _ := new(models.Parrafo).GetParrafos(coro.ID)
-	// 	coros[idx].Parrafos = parrafos
-
-	// 	temas, _ := new(models.Tema).GetTemas(coro.ID)
-	// 	coros[idx].Temas = temas
-	// }
-
 }

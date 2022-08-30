@@ -26,7 +26,7 @@ type Song struct {
 	Description  string               `json:"description" bson:"description"`
 	BibleVerse   string               `json:"bible_verse" bson:"bible_verse"`
 	Number       int                  `json:"number" bson:"number"`
-	Verses       []Verse              `json:"verses" bson:"verses"`
+	Text         string               `json:"text" bson:"text"`
 	Voices       []Voice              `json:"voices" bson:"voices"`
 }
 
