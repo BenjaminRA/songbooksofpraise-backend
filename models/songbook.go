@@ -78,6 +78,33 @@ func (n *Songbook) GetAllSongbooks(lang string) []Songbook {
 	return result
 }
 
+func (n *Songbook) GetSongs(id string) []Song {
+	db := mongodb.GetMongoDBConnection()
+	object_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		panic(err)
+	}
+
+	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
+		{"$match": bson.M{
+			"songbook_id": object_id,
+		}},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	result := []Song{}
+
+	for cursor.Next(context.TODO()) {
+		elem := Song{}
+		cursor.Decode(&elem)
+		result = append(result, elem)
+	}
+
+	return result
+}
+
 func (n *Songbook) GetSongbookByID(id string, lang string) Songbook {
 	db := mongodb.GetMongoDBConnection()
 	objectID, _ := primitive.ObjectIDFromHex(id)

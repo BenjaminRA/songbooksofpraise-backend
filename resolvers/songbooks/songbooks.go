@@ -5,33 +5,30 @@ import (
 
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/gin-gonic/gin"
+	"github.com/graphql-go/graphql"
 )
 
-func GetSongbooks(c *gin.Context) {
-	lang := c.GetHeader("Language")
-	if lang == "" {
-		lang = "EN"
-	}
-
+func GetSongbooks(p graphql.ResolveParams) (interface{}, error) {
+	lang := p.Context.Value("language").(string)
 	songbooks := new(models.Songbook).GetAllSongbooks(lang)
 
-	c.IndentedJSON(http.StatusOK, songbooks)
+	return songbooks, nil
 }
 
-func GetSongbooksById(c *gin.Context) {
-	id := c.Param("id")
-	lang := c.GetHeader("Language")
-	if lang == "" {
-		lang = "EN"
+func GetSongbook(p graphql.ResolveParams) (interface{}, error) {
+	id, ok := p.Args["_id"].(string)
+	if !ok {
+		return nil, nil
 	}
 
-	song := new(models.Songbook).GetSongbookByID(id, lang)
+	lang := p.Context.Value("language").(string)
+	songbook := new(models.Songbook).GetSongbookByID(id, lang)
 
-	if song.ID.Hex() == "000000000000000000000000" {
-		c.IndentedJSON(http.StatusNotFound, song)
-	} else {
-		c.IndentedJSON(http.StatusOK, song)
+	if songbook.ID.Hex() == "000000000000000000000000" {
+		return nil, nil
 	}
+
+	return songbook, nil
 }
 
 func PostSongbook(c *gin.Context) {

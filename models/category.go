@@ -51,15 +51,11 @@ func (n *Category) GetAllCategories() []Category {
 	return result
 }
 
-func (n *Category) GetCategoryById(id string) Category {
+func (n *Category) GetCategoryById(id primitive.ObjectID) Category {
 	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		panic(err)
-	}
 
 	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
-		{"$match": bson.M{"_id": object_id}},
+		{"$match": bson.M{"_id": id}},
 		{"$lookup": bson.M{
 			"from":         "Songs",
 			"localField":   "_id",
@@ -137,7 +133,7 @@ func (n *Category) CreateCategory() (Category, error) {
 		return Category{}, err
 	}
 
-	return new(Category).GetCategoryById(n.ID.Hex()), nil
+	return new(Category).GetCategoryById(n.ID), nil
 }
 
 func (n *Category) UpdateCategory() error {

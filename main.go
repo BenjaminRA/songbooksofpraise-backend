@@ -3,15 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
+	"net/http"
 
-	route_categories "github.com/BenjaminRA/himnario-backend/routes/categories"
-	route_countries "github.com/BenjaminRA/himnario-backend/routes/countries"
-	route_languages "github.com/BenjaminRA/himnario-backend/routes/languages"
-	route_songbooks "github.com/BenjaminRA/himnario-backend/routes/songbooks"
-	route_songs "github.com/BenjaminRA/himnario-backend/routes/songs"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/BenjaminRA/himnario-backend/middlewares"
+	resolver_songbooks "github.com/BenjaminRA/himnario-backend/resolvers/songbooks"
+	"github.com/BenjaminRA/himnario-backend/types"
+	"github.com/graphql-go/graphql"
+	"github.com/graphql-go/handler"
 )
 
 func main() {
@@ -24,36 +22,66 @@ func main() {
 		Migrate()
 	}
 
-	router := gin.Default()
-	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
-		AllowHeaders:     []string{"*"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	fields := graphql.Fields{
+		"songbooks": &graphql.Field{
+			Type:        graphql.NewList(types.Songbook),
+			Description: "Get the list of all songbooks",
+			Resolve:     resolver_songbooks.GetSongbooks,
+		},
+		"songbook": &graphql.Field{
+			Type:        types.Songbook,
+			Description: "Get a specific songbook",
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.ID,
+				},
+			},
+			Resolve: resolver_songbooks.GetSongbook,
+		},
+	}
+	rootQuery := graphql.ObjectConfig{Name: "Query", Fields: fields}
+	schemaConfig := graphql.SchemaConfig{Query: graphql.NewObject(rootQuery)}
+	schema, _ := graphql.NewSchema(schemaConfig)
 
-	router.GET("/songs", route_songs.GetSongs)
-	router.GET("/songs/:id", route_songs.GetSongsById)
-	router.GET("/songs/:id/music_sheet", route_songs.GetMusicSheet)
-	router.GET("/songs/:id/voices/:voice", route_songs.GetVoicesByVoice)
+	h := handler.New(&handler.Config{
+		Schema:     &schema,
+		Pretty:     true,
+		Playground: true,
+	})
 
-	router.GET("/songbooks", route_songbooks.GetSongbooks)
-	router.POST("/songbooks", route_songbooks.PostSongbook)
-	router.GET("/songbooks/:id", route_songbooks.GetSongbooksById)
-	router.PUT("/songbooks/:id", route_songbooks.UpdateSongbook)
-	router.DELETE("/songbooks/:id", route_songbooks.DeleteSongbook)
+	http.Handle("/", middlewares.FinalMiddleware(h))
+	http.ListenAndServe(":8080", nil)
 
-	router.GET("/categories", route_categories.GetCategories)
-	router.POST("/categories", route_categories.PostCategory)
-	router.GET("/categories/:id", route_categories.GetCategoriesById)
-	router.PUT("/categories/:id", route_categories.UpdateCategory)
-	router.DELETE("/categories/:id", route_categories.DeleteCategory)
+	// router := gin.Default()
+	// router.Use(cors.New(cors.Config{
+	// 	AllowAllOrigins:  true,
+	// 	AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
+	// 	AllowHeaders:     []string{"*"},
+	// 	AllowCredentials: true,
+	// 	MaxAge:           12 * time.Hour,
+	// }))
 
-	router.GET("/languages", route_languages.GetLanguages)
-	router.PUT("/languages/:code", route_languages.UpdateLanguage)
+	// router.GET("/songs", route_songs.GetSongs)
+	// router.GET("/songs/:id", route_songs.GetSongsById)
+	// router.GET("/songs/:id/music_sheet", route_songs.GetMusicSheet)
+	// router.GET("/songs/:id/voices/:voice", route_songs.GetVoicesByVoice)
 
-	router.GET("/countries", route_countries.GetCountries)
+	// router.GET("/songbooks", route_songbooks.GetSongbooks)
+	// router.POST("/songbooks", route_songbooks.PostSongbook)
+	// router.GET("/songbooks/:id", route_songbooks.GetSongbooksById)
+	// router.PUT("/songbooks/:id", route_songbooks.UpdateSongbook)
+	// router.DELETE("/songbooks/:id", route_songbooks.DeleteSongbook)
 
-	router.Run("localhost:8080")
+	// router.GET("/categories", route_categories.GetCategories)
+	// router.POST("/categories", route_categories.PostCategory)
+	// router.GET("/categories/:id", route_categories.GetCategoriesById)
+	// router.PUT("/categories/:id", route_categories.UpdateCategory)
+	// router.DELETE("/categories/:id", route_categories.DeleteCategory)
+
+	// router.GET("/languages", route_languages.GetLanguages)
+	// router.PUT("/languages/:code", route_languages.UpdateLanguage)
+
+	// router.GET("/countries", route_countries.GetCountries)
+
+	// router.Run("localhost:8080")
 }
