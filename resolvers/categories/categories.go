@@ -1,16 +1,28 @@
 package categories
 
 import (
-	"net/http"
-
 	"github.com/BenjaminRA/himnario-backend/models"
-	"github.com/gin-gonic/gin"
+	"github.com/graphql-go/graphql"
 )
 
-func GetCategories(c *gin.Context) {
+func GetCategories(p graphql.ResolveParams) (interface{}, error) {
 	categories := new(models.Category).GetAllCategories()
 
-	c.IndentedJSON(http.StatusOK, categories)
+	return categories, nil
+}
+
+func GetCategory(p graphql.ResolveParams) (interface{}, error) {
+	id, ok := p.Args["_id"].(string)
+	if !ok {
+		return nil, nil
+	}
+
+	category := new(models.Category).GetCategoryById(id)
+	if category.ID.Hex() == "000000000000000000000000" {
+		return nil, nil
+	}
+
+	return category, nil
 }
 
 // func GetCategoriesById(c *gin.Context) {

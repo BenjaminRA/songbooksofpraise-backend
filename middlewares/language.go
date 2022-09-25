@@ -2,19 +2,19 @@ package middlewares
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/graphql-go/handler"
+	"github.com/gin-gonic/gin"
 )
 
-func LanguageMiddleware(next *handler.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lang := r.Header.Get("Language")
+func LanguageParser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		lang := c.GetHeader("Language")
 		if lang == "" {
 			lang = "EN"
 		}
-		ctx := context.WithValue(r.Context(), "language", lang)
 
-		next.ContextHandler(ctx, w, r)
-	})
+		c.Request = c.Request.Clone(context.WithValue(c.Request.Context(), "language", lang))
+
+		c.Next()
+	}
 }

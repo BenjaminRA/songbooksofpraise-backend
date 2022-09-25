@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
+	"time"
 
 	"github.com/BenjaminRA/himnario-backend/middlewares"
-	resolver_songbooks "github.com/BenjaminRA/himnario-backend/resolvers/songbooks"
-	"github.com/BenjaminRA/himnario-backend/types"
+	"github.com/BenjaminRA/himnario-backend/schema"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 )
@@ -22,44 +23,50 @@ func main() {
 		Migrate()
 	}
 
-	fields := graphql.Fields{
-		"songbooks": &graphql.Field{
-			Type:        graphql.NewList(types.Songbook),
-			Description: "Get the list of all songbooks",
-			Resolve:     resolver_songbooks.GetSongbooks,
-		},
-		"songbook": &graphql.Field{
-			Type:        types.Songbook,
-			Description: "Get a specific songbook",
-			Args: graphql.FieldConfigArgument{
-				"_id": &graphql.ArgumentConfig{
-					Type: graphql.ID,
-				},
-			},
-			Resolve: resolver_songbooks.GetSongbook,
-		},
+	schemaConfig := graphql.SchemaConfig{
+		Query: graphql.NewObject(schema.Query),
+		// Mutation: graphql.NewObject(schema.Mutation),
 	}
-	rootQuery := graphql.ObjectConfig{Name: "Query", Fields: fields}
-	schemaConfig := graphql.SchemaConfig{Query: graphql.NewObject(rootQuery)}
 	schema, _ := graphql.NewSchema(schemaConfig)
 
+	// http.Handle("/graphql", middlewares.FinalMiddleware(h))
+
+	// http.ListenAndServe(":8080", nil)
+
+	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
+		AllowHeaders:     []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	h := handler.New(&handler.Config{
-		Schema:     &schema,
-		Pretty:     true,
-		Playground: true,
+		Schema: &schema,
 	})
 
-	http.Handle("/", middlewares.FinalMiddleware(h))
-	http.ListenAndServe(":8080", nil)
+	graphqlHandler := func() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			h.ServeHTTP(c.Writer, c.Request)
+		}
+	}
 
-	// router := gin.Default()
-	// router.Use(cors.New(cors.Config{
-	// 	AllowAllOrigins:  true,
-	// 	AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
-	// 	AllowHeaders:     []string{"*"},
-	// 	AllowCredentials: true,
-	// 	MaxAge:           12 * time.Hour,
-	// }))
+	router.Use(middlewares.LanguageParser())
+	router.POST("/graphql", graphqlHandler())
+
+	// playgroundH := handler.New(&handler.Config{
+	// 	Schema:     &schema,
+	// 	Pretty:     true,
+	// 	Playground: true,
+	// })
+
+	// playgroundHandler := func() gin.HandlerFunc {
+	// 	return func(c *gin.Context) {
+	// 		playgroundH.ServeHTTP(c.Writer, c.Request)
+	// 	}
+	// }
+	// router.GET("/graphql", playgroundHandler())
 
 	// router.GET("/songs", route_songs.GetSongs)
 	// router.GET("/songs/:id", route_songs.GetSongsById)
@@ -83,5 +90,5 @@ func main() {
 
 	// router.GET("/countries", route_countries.GetCountries)
 
-	// router.Run("localhost:8080")
+	router.Run("localhost:8080")
 }

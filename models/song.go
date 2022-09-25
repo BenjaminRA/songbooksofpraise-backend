@@ -30,10 +30,11 @@ type Song struct {
 	Voices       []Voice              `json:"voices" bson:"voices"`
 }
 
-func (n *Song) GetAllSongs() []Song {
+func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
 	db := mongodb.GetMongoDBConnection()
 
 	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
+		{"$match": args},
 		{"$lookup": bson.M{
 			"from":         "Categories",
 			"localField":   "categories_id",
@@ -88,6 +89,10 @@ func (n *Song) GetSongByID(id string) Song {
 		elem := Song{}
 		cursor.Decode(&elem)
 		result = append(result, elem)
+	}
+
+	if len(result) == 0 {
+		return Song{}
 	}
 
 	return result[0]

@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
@@ -37,7 +36,6 @@ func (n *Category) GetAllCategories() []Category {
 	for cursor.Next(context.TODO()) {
 		elem := Category{}
 		cursor.Decode(&elem)
-		fmt.Println(elem.Category, elem.All)
 		if elem.ID.Hex() != "000000000000000000000000" {
 			wg.Add(1)
 			elem.Children = elem.GetChildren()
@@ -51,11 +49,15 @@ func (n *Category) GetAllCategories() []Category {
 	return result
 }
 
-func (n *Category) GetCategoryById(id primitive.ObjectID) Category {
+func (n *Category) GetCategoryById(id string) Category {
 	db := mongodb.GetMongoDBConnection()
+	object_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		panic(err)
+	}
 
 	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
-		{"$match": bson.M{"_id": id}},
+		{"$match": bson.M{"_id": object_id}},
 		{"$lookup": bson.M{
 			"from":         "Songs",
 			"localField":   "_id",
@@ -85,6 +87,10 @@ func (n *Category) GetCategoryById(id primitive.ObjectID) Category {
 		}
 
 		result = append(result, elem)
+	}
+
+	if len(result) == 0 {
+		return Category{}
 	}
 
 	return result[0]
@@ -133,7 +139,7 @@ func (n *Category) CreateCategory() (Category, error) {
 		return Category{}, err
 	}
 
-	return new(Category).GetCategoryById(n.ID), nil
+	return new(Category).GetCategoryById(n.ID.Hex()), nil
 }
 
 func (n *Category) UpdateCategory() error {

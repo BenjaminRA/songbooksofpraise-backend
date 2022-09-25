@@ -11,6 +11,10 @@ var Category = graphql.NewObject(
 		Fields: graphql.Fields{
 			"_id": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.ID),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Category).ID.Hex()
+					return id, nil
+				},
 			},
 			"all": &graphql.Field{
 				Type: graphql.Boolean,
@@ -20,9 +24,17 @@ var Category = graphql.NewObject(
 			},
 			"songbook_id": &graphql.Field{
 				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Category).SongbookID.Hex()
+					return id, nil
+				},
 			},
 			"parent_id": &graphql.Field{
 				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Category).ParentID.Hex()
+					return id, nil
+				},
 			},
 			"created_at": &graphql.Field{
 				Type: graphql.DateTime,
@@ -39,8 +51,12 @@ func init() {
 		Type: graphql.NewList(Category),
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			id := p.Source.(models.Category).ID
-			category := new(models.Category).GetCategoryById(id)
+			category := new(models.Category).GetCategoryById(id.Hex())
 			return category.Children, nil
 		},
+	})
+
+	Category.AddFieldConfig("songs", &graphql.Field{
+		Type: graphql.NewList(Song),
 	})
 }

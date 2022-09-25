@@ -1,6 +1,9 @@
 package types
 
-import "github.com/graphql-go/graphql"
+import (
+	"github.com/BenjaminRA/himnario-backend/models"
+	"github.com/graphql-go/graphql"
+)
 
 var Song = graphql.NewObject(
 	graphql.ObjectConfig{
@@ -8,15 +11,57 @@ var Song = graphql.NewObject(
 		Fields: graphql.Fields{
 			"_id": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.ID),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Song).ID.Hex()
+					return id, nil
+				},
+			},
+			"songbook_id": &graphql.Field{
+				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Song).SongbookID.Hex()
+					return id, nil
+				},
+			},
+			"categories_id": &graphql.Field{
+				Type: graphql.NewList(graphql.String),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					temp := []string{}
+					ids := p.Source.(models.Song).CategoriesID
+
+					for _, id := range ids {
+						temp = append(temp, id.Hex())
+					}
+
+					return temp, nil
+				},
 			},
 			"title": &graphql.Field{
+				Type: graphql.String,
+			},
+			"chords": &graphql.Field{
+				Type: graphql.Boolean,
+			},
+			"music_sheet": &graphql.Field{
+				Type: graphql.String,
+			},
+			"music": &graphql.Field{
+				Type: graphql.String,
+			},
+			"author": &graphql.Field{
 				Type: graphql.String,
 			},
 			"description": &graphql.Field{
 				Type: graphql.String,
 			},
+			"bible_verse": &graphql.Field{
+				Type: graphql.String,
+			},
 			"number": &graphql.Field{
 				Type: graphql.Int,
+			},
+			"text": &graphql.Field{
+				Type: graphql.String,
 			},
 			"created_at": &graphql.Field{
 				Type: graphql.DateTime,
@@ -27,3 +72,29 @@ var Song = graphql.NewObject(
 		},
 	},
 )
+
+func init() {
+	Song.AddFieldConfig("songbook", &graphql.Field{
+		Type: Songbook,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			songbook_id := p.Source.(models.Song).SongbookID.Hex()
+			lang := p.Context.Value("language").(string)
+
+			if songbook_id == "000000000000000000000000" {
+				return nil, nil
+			}
+
+			songbook := new(models.Songbook).GetSongbookByID(songbook_id, lang)
+
+			if songbook.ID.Hex() == "000000000000000000000000" {
+				return nil, nil
+			}
+
+			return songbook, nil
+		},
+	})
+
+	Song.AddFieldConfig("categories", &graphql.Field{
+		Type: graphql.NewList(Category),
+	})
+}

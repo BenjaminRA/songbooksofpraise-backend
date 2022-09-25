@@ -6,12 +6,14 @@ import (
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Language struct {
-	Language   string `json:"language" bson:"language"`
-	ReaderCode string `json:"reader_code" bson:"reader_code"`
-	Code       string `json:"code" bson:"code"`
+	ID         primitive.ObjectID `json:"_id" bson:"_id"`
+	Language   string             `json:"language" bson:"language"`
+	ReaderCode string             `json:"reader_code" bson:"reader_code"`
+	Code       string             `json:"code" bson:"code"`
 }
 
 func (n *Language) GetAllLanguages(reader_code string) []Language {
@@ -38,6 +40,31 @@ func (n *Language) GetAllLanguages(reader_code string) []Language {
 		cursor.Decode(&elem)
 
 		result = append(result, elem)
+	}
+
+	return result
+}
+
+func (n *Language) GetLanguageByCode(code string, reader_code string) Language {
+	db := mongodb.GetMongoDBConnection()
+
+	if reader_code == "" {
+		reader_code = "EN"
+	}
+
+	reader_code = strings.ToUpper(reader_code)
+
+	cursor := db.Collection("Languages").FindOne(context.TODO(), bson.M{
+		"code":        code,
+		"reader_code": reader_code,
+	})
+
+	result := Language{}
+
+	err := cursor.Decode(&result)
+
+	if err != nil {
+		panic(err)
 	}
 
 	return result
