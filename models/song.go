@@ -105,7 +105,9 @@ func (n *Song) GetMusicSheet(id string) ([]byte, string) {
 		panic(err)
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	var results bson.M
 	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
 	if err != nil {
@@ -137,7 +139,8 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 		panic(err)
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	var results bson.M
 	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
 	if err != nil {
