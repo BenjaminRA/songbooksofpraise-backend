@@ -10,7 +10,7 @@ var Songbook = graphql.NewObject(
 		Name: "Songbook",
 		Fields: graphql.Fields{
 			"_id": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.ID),
+				Type: graphql.ID,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := p.Source.(models.Songbook).ID.Hex()
 					return id, nil
@@ -40,6 +40,27 @@ var Songbook = graphql.NewObject(
 		},
 	},
 )
+
+var NewSongbook = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "NewSongbook",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"title": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"description": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"language_code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"country_code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"numeration": &graphql.InputObjectFieldConfig{
+			Type: graphql.Boolean,
+		},
+	},
+})
 
 func init() {
 	Songbook.AddFieldConfig("language", &graphql.Field{

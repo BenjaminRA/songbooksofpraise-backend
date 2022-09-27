@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/json"
 	"reflect"
 
 	"github.com/BenjaminRA/himnario-backend/models"
@@ -35,4 +36,17 @@ func VerseMap(t *[]models.Parrafo, function func(himno models.Parrafo) models.Ve
 		arr = append(arr, function(value))
 	}
 	return arr
+}
+
+func BindJSON(jsonObject interface{}, object interface{}) error {
+	jsonBody, err := json.Marshal(jsonObject)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(jsonBody, &object)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

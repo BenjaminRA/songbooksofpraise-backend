@@ -1,17 +1,15 @@
 package countries
 
 import (
-	"net/http"
-
 	"github.com/BenjaminRA/himnario-backend/models"
-	"github.com/gin-gonic/gin"
+	"github.com/graphql-go/graphql"
 )
 
-func GetCountries(c *gin.Context) {
-	reader_code := c.GetHeader("Language")
+func GetCountries(p graphql.ResolveParams) (interface{}, error) {
+	reader_code := p.Context.Value("language").(string)
 	countries := new(models.Country).GetAllCountries(reader_code)
 
-	c.IndentedJSON(http.StatusOK, countries)
+	return countries, nil
 }
 
 // func UpdateLanguage(c *gin.Context) {

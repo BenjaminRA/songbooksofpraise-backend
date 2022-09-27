@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	handlers "github.com/BenjaminRA/himnario-backend/handlers/songs"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
 	"github.com/BenjaminRA/himnario-backend/schema"
 	"github.com/gin-contrib/cors"
@@ -24,8 +25,8 @@ func main() {
 	}
 
 	schemaConfig := graphql.SchemaConfig{
-		Query: graphql.NewObject(schema.Query),
-		// Mutation: graphql.NewObject(schema.Mutation),
+		Query:    graphql.NewObject(schema.Query),
+		Mutation: graphql.NewObject(schema.Mutation),
 	}
 	schema, _ := graphql.NewSchema(schemaConfig)
 
@@ -46,31 +47,34 @@ func main() {
 		Schema: &schema,
 	})
 
+	// Takes the http handler for the graphl schema and serves it in a gin handler
 	graphqlHandler := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
 			h.ServeHTTP(c.Writer, c.Request)
 		}
 	}
 
+	// Sets the language variable to retrieve the information accordingly
 	router.Use(middlewares.LanguageParser())
+
 	router.POST("/graphql", graphqlHandler())
 
-	// playgroundH := handler.New(&handler.Config{
-	// 	Schema:     &schema,
-	// 	Pretty:     true,
-	// 	Playground: true,
-	// })
+	playgroundH := handler.New(&handler.Config{
+		Schema:     &schema,
+		Pretty:     true,
+		Playground: true,
+	})
 
-	// playgroundHandler := func() gin.HandlerFunc {
-	// 	return func(c *gin.Context) {
-	// 		playgroundH.ServeHTTP(c.Writer, c.Request)
-	// 	}
-	// }
-	// router.GET("/graphql", playgroundHandler())
+	playgroundHandler := func() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			playgroundH.ServeHTTP(c.Writer, c.Request)
+		}
+	}
+	router.GET("/graphql", playgroundHandler())
 
 	// router.GET("/songs", route_songs.GetSongs)
 	// router.GET("/songs/:id", route_songs.GetSongsById)
-	// router.GET("/songs/:id/music_sheet", route_songs.GetMusicSheet)
+	router.GET("/songs/:id/music_sheet", handlers.GetMusicSheet)
 	// router.GET("/songs/:id/voices/:voice", route_songs.GetVoicesByVoice)
 
 	// router.GET("/songbooks", route_songbooks.GetSongbooks)
