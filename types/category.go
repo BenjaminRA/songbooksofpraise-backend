@@ -46,6 +46,21 @@ var Category = graphql.NewObject(
 	},
 )
 
+var NewCategory = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "NewCategory",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"category": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"songbook_id": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"parent_id": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})
+
 func init() {
 	Category.AddFieldConfig("children", &graphql.Field{
 		Type: graphql.NewList(Category),
