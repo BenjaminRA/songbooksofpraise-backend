@@ -50,25 +50,6 @@ func GetSongById(p graphql.ResolveParams) (interface{}, error) {
 	return song, nil
 }
 
-// func GetSongs(c *gin.Context) {
-// 	songs := new(models.Song).GetAllSongs()
-
-// 	c.IndentedJSON(http.StatusOK, songs)
-// }
-
-// func GetSongsById(c *gin.Context) {
-// 	id := c.Param("id")
-
-// 	song := new(models.Song).GetSongByID(id)
-
-// 	if song.ID.Hex() == "000000000000000000000000" {
-// 		c.IndentedJSON(http.StatusNotFound, song)
-// 	} else {
-// 		c.IndentedJSON(http.StatusOK, song)
-// 	}
-
-// }
-
 func GetMusicSheet(c *gin.Context) {
 	id := c.Param("id")
 	data, filename := new(models.Song).GetMusicSheet(id)
@@ -88,3 +69,24 @@ func GetVoicesByVoice(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+filename)
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
+
+// func UpdateSongbook(p graphql.ResolveParams) (interface{}, error) {
+// 	id := p.Args["_id"].(string)
+// 	lang := p.Context.Value("language").(string)
+
+// 	song := new(models.Song).GetSongByID(id, lang)
+
+// 	if songbook.ID.Hex() == "000000000000000000000000" {
+// 		return nil, fmt.Errorf("songbook not found")
+// 	}
+
+// 	if err := helpers.BindJSON(p.Args["songbook"], &songbook); err != nil {
+// 		return nil, err
+// 	}
+
+// 	if err := songbook.UpdateSongbook(); err != nil {
+// 		return nil, err
+// 	}
+
+// 	return songbook, nil
+// }

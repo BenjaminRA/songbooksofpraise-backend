@@ -1,6 +1,7 @@
 package schema
 
 import (
+	resolver_bible_books "github.com/BenjaminRA/himnario-backend/resolvers/bible_books"
 	resolver_categories "github.com/BenjaminRA/himnario-backend/resolvers/categories"
 	resolver_countries "github.com/BenjaminRA/himnario-backend/resolvers/countries"
 	resolver_languages "github.com/BenjaminRA/himnario-backend/resolvers/languages"
@@ -13,6 +14,8 @@ import (
 var Query = graphql.ObjectConfig{
 	Name: "Query",
 	Fields: graphql.Fields{
+
+		// Songbooks
 		"songbooks": &graphql.Field{
 			Type:        graphql.NewList(types.Songbook),
 			Description: "Get a list of all songbooks",
@@ -28,6 +31,8 @@ var Query = graphql.ObjectConfig{
 			},
 			Resolve: resolver_songbooks.GetSongbook,
 		},
+
+		// Categories
 		"categories": &graphql.Field{
 			Type:        graphql.NewList(types.Category),
 			Description: "Get a list of all the categories",
@@ -43,6 +48,8 @@ var Query = graphql.ObjectConfig{
 			},
 			Resolve: resolver_categories.GetCategory,
 		},
+
+		// Songs
 		"songs": &graphql.Field{
 			Type:        graphql.NewList(types.Song),
 			Description: "Get a list of all the songs",
@@ -66,15 +73,36 @@ var Query = graphql.ObjectConfig{
 			},
 			Resolve: resolver_songs.GetSongById,
 		},
+
+		// Languages
 		"languages": &graphql.Field{
 			Type:        graphql.NewList(types.Language),
 			Description: "Get a list of all the languages",
 			Resolve:     resolver_languages.GetLanguages,
 		},
+
+		// Countries
 		"countries": &graphql.Field{
 			Type:        graphql.NewList(types.Country),
 			Description: "Get a list of all the countries",
 			Resolve:     resolver_countries.GetCountries,
+		},
+
+		// Bible Books
+		"bible_books": &graphql.Field{
+			Type:        graphql.NewList(types.BibleBook),
+			Description: "Get a list of all bible books",
+			Resolve:     resolver_bible_books.GetAllBibleBooks,
+		},
+		"bible_book": &graphql.Field{
+			Type:        graphql.NewList(types.BibleBook),
+			Description: "Get a specific bible books",
+			Args: graphql.FieldConfigArgument{
+				"code": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+			},
+			Resolve: resolver_bible_books.GetAllBibleBooks,
 		},
 	},
 }

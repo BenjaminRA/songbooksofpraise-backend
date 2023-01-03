@@ -80,5 +80,103 @@ var Mutation = graphql.ObjectConfig{
 			Description: "Delete a category",
 			Resolve:     resolver_categories.DeleteCategory,
 		},
+
+		// Languages
+		"createLanguage": &graphql.Field{
+			Type: types.Language,
+			Args: graphql.FieldConfigArgument{
+				"language": &graphql.ArgumentConfig{
+					Type: graphql.NewList(types.NewLanguage),
+				},
+			},
+			Description: "Create a new language",
+		},
+		"updateLanguage": &graphql.Field{
+			Type: types.Language,
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+				"language": &graphql.ArgumentConfig{
+					Type: types.NewLanguage,
+				},
+			},
+			Description: "Update an existing language",
+		},
+		"deleteLanguage": &graphql.Field{
+			Type: types.Language,
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+			},
+			Description: "Delete a language",
+		},
+
+		// Countries
+		"createCountry": &graphql.Field{
+			Type: types.Country,
+			Args: graphql.FieldConfigArgument{
+				"country": &graphql.ArgumentConfig{
+					Type: types.NewCountry,
+				},
+			},
+			Description: "Create a new country",
+		},
+		"updateCountry": &graphql.Field{
+			Type: types.Country,
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+				"country": &graphql.ArgumentConfig{
+					Type: types.NewCountry,
+				},
+			},
+			Description: "Update an existing country",
+		},
+		"deleteCountry": &graphql.Field{
+			Type: types.Country,
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+			},
+			Description: "Delete a country",
+		},
+
+		// Songs
+		"createSong": &graphql.Field{
+			Type: types.Song,
+			Args: graphql.FieldConfigArgument{
+				"song": &graphql.ArgumentConfig{
+					Type: types.NewSong,
+				},
+			},
+			Description: "Create a new song",
+		},
+
+		"updateSong": &graphql.Field{
+			Type: types.Song,
+			Args: graphql.FieldConfigArgument{
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
+				},
+				"song": &graphql.ArgumentConfig{
+					Type: types.NewSong,
+				},
+			},
+			Description: "Update an existing song",
+		},
+
+		"deleteSong": &graphql.Field{
+			Type: types.Song,
+			Args: graphql.FieldConfigArgument{
+				"song": &graphql.ArgumentConfig{
+					Type: types.NewSong,
+				},
+			},
+			Description: "Delete a song",
+		},
 	},
 }

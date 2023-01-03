@@ -1,0 +1,133 @@
+﻿code;languaje_code;book;testament
+Gen;EN;Genesis;old
+Exod;EN;Exodus;old
+Lev;EN;Leviticus;old
+Num;EN;Numbers;old
+Deut;EN;Deuteronomy;old
+Josh;EN;Joshua;old
+Judg;EN;Judges;old
+Ruth;EN;Ruth;old
+1Sam;EN;1 Samuel;old
+2Sam;EN;2 Samuel;old
+1Kgs;EN;1 Kings;old
+2Kgs;EN;2 Kings;old
+1Chr;EN;1 Chronicles;old
+2Chr;EN;2 Chronicles;old
+Ezra;EN;Ezra;old
+Neh;EN;Nehemiah;old
+Esth;EN;Esther;old
+Job;EN;Job;old
+Ps;EN;Psalms;old
+Prov;EN;Proverbs;old
+Eccl;EN;Ecclesiastes;old
+Song;EN;Song of Solomon;old
+Isa;EN;Isaiah;old
+Jer;EN;Jeremiah;old
+Lam;EN;Lamentations;old
+Ezek;EN;Ezekiel;old
+Dan;EN;Daniel;old
+Hos;EN;Hosea;old
+Joel;EN;Joel;old
+Amos;EN;Amos;old
+Obad;EN;Obadiah;old
+Jonah;EN;Jonah;old
+Mic;EN;Micah;old
+Nah;EN;Nahum;old
+Hab;EN;Habakkuk;old
+Zeph;EN;Zephaniah;old
+Hag;EN;Haggai;old
+Zech;EN;Zechariah;old
+Mal;EN;Malachi;old
+Matt;EN;Matthew;new
+Mark;EN;Mark;new
+Luke;EN;Luke;new
+John;EN;John;new
+Acts;EN;Acts;new
+Rom;EN;Romans;new
+1Cor;EN;1 Corinthians;new
+2Cor;EN;2 Corinthians;new
+Gal;EN;Galatians;new
+Eph;EN;Ephesians;new
+Phil;EN;Philippians;new
+Col;EN;Colossians;new
+1Thess;EN;1 Thessalonians;new
+2Thess;EN;2 Thessalonians;new
+1Tim;EN;1 Timothy;new
+2Tim;EN;2 Timothy;new
+Titus;EN;Titus;new
+Phim;EN;Philemon;new
+Heb;EN;Hebrews;new
+Jas;EN;James;new
+1Pet;EN;1 Peter;new
+2Pet;EN;2 Peter;new
+1John;EN;1 John;new
+2John;EN;2 John;new
+3John;EN;3 John;new
+Jude;EN;Jude;new
+Rev;EN;Revelation;new
+Gen;ES;Génesis;old
+Exod;ES;Éxodo;old
+Lev;ES;Levíticos;old
+Num;ES;Números;old
+Deut;ES;Deuteronomio;old
+Josh;ES;Josué;old
+Judg;ES;Jueces;old
+Ruth;ES;Rut;old
+1Sam;ES;1 Samuel;old
+2Sam;ES;2 Samuel;old
+1Kgs;ES;1 Reyes;old
+2Kgs;ES;2 Reyes;old
+1Chr;ES;1 Crónicas;old
+2Chr;ES;2 Crónicas;old
+Ezra;ES;Esdras;old
+Neh;ES;Nehemías;old
+Esth;ES;Ester;old
+Job;ES;Job;old
+Ps;ES;Salmos;old
+Prov;ES;Proverbios;old
+Eccl;ES;Eclesiastés;old
+Song;ES;Cantar de los Cantares;old
+Isa;ES;Isaías;old
+Jer;ES;Jeremías;old
+Lam;ES;Lamentaciones;old
+Ezek;ES;Ezequiel;old
+Dan;ES;Daniel;old
+Hos;ES;Oseas;old
+Joel;ES;Joel;old
+Amos;ES;Amós;old
+Obad;ES;Abdías;old
+Jonah;ES;Jonás;old
+Mic;ES;Miqueas;old
+Nah;ES;Nahúm;old
+Hab;ES;Habacuc;old
+Zeph;ES;Sofonías;old
+Hag;ES;Ageo;old
+Zech;ES;Zacarías;old
+Mal;ES;Malaquías;old
+Matt;ES;Mateo;new
+Mark;ES;Marcos;new
+Luke;ES;Lucas;new
+John;ES;Juan;new
+Acts;ES;Hechos;new
+Rom;ES;Romanos;new
+1Cor;ES;1 Corintios;new
+2Cor;ES;2 Corintios;new
+Gal;ES;Gálatas;new
+Eph;ES;Efesios;new
+Phil;ES;Filipenses;new
+Col;ES;Colosenses;new
+1Thess;ES;1 Tesalonicenses;new
+2Thess;ES;2 Tesalonicenses;new
+1Tim;ES;1 Timoteo;new
+2Tim;ES;2 Timoteo;new
+Titus;ES;Tito;new
+Phim;ES;Filemón;new
+Heb;ES;Hebreos;new
+Jas;ES;Santiago;new
+1Pet;ES;1 Pedro;new
+2Pet;ES;2 Pedro;new
+1John;ES;1 Juan;new
+2John;ES;2 Juan;new
+3John;ES;3 Juan;new
+Jude;ES;Judas;new
+Rev;ES;Apocalipsis;new

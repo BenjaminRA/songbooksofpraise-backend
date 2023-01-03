@@ -28,3 +28,18 @@ var Country = graphql.NewObject(
 		},
 	},
 )
+
+var NewCountry = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "NewCountry",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"country": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"reader_code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})

@@ -28,3 +28,18 @@ var Language = graphql.NewObject(
 		},
 	},
 )
+
+var NewLanguage = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "NewLanguage",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"language": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"reader_code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"code": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})

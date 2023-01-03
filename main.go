@@ -7,6 +7,7 @@ import (
 
 	handlers "github.com/BenjaminRA/himnario-backend/handlers/songs"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
+	migration "github.com/BenjaminRA/himnario-backend/migration"
 	"github.com/BenjaminRA/himnario-backend/schema"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ func main() {
 
 	if migrate {
 		fmt.Println("Migrating database")
-		Migrate()
+		migration.Migrate()
 	}
 
 	schemaConfig := graphql.SchemaConfig{

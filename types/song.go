@@ -44,6 +44,10 @@ var Song = graphql.NewObject(
 			},
 			"music_sheet": &graphql.Field{
 				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					id := p.Source.(models.Song).MusicSheet.Hex()
+					return id, nil
+				},
 			},
 			"music": &graphql.Field{
 				Type: graphql.String,
@@ -72,6 +76,51 @@ var Song = graphql.NewObject(
 		},
 	},
 )
+
+var NewSong = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "NewSong",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"songbook_id": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"categories_id": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewList(graphql.String),
+		},
+		"title": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"chords": &graphql.InputObjectFieldConfig{
+			Type: graphql.Boolean,
+		},
+		"music_sheet": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"music": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"author": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"description": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"bible_verse": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"number": &graphql.InputObjectFieldConfig{
+			Type: graphql.Int,
+		},
+		"text": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"created_at": &graphql.InputObjectFieldConfig{
+			Type: graphql.DateTime,
+		},
+		"updated_at": &graphql.InputObjectFieldConfig{
+			Type: graphql.DateTime,
+		},
+	},
+})
 
 func init() {
 	Song.AddFieldConfig("songbook", &graphql.Field{

@@ -1,50 +1,24 @@
-package main
+package migration
 
 import (
 	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"github.com/BenjaminRA/himnario-backend/models"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/tcolgate/mp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-// Helper function to recursively print the Temas.
-func printTemas(tema models.Tema, counter ...int) {
-	if len(counter) == 0 {
-		fmt.Println("Tema:", tema.Tema)
-	} else {
-		fmt.Println("\t", "SubTema:", tema.Tema)
-	}
-
-	if len(tema.SubTemas) > 0 {
-		for _, subtema := range tema.SubTemas {
-			printTemas(subtema, 2)
-		}
-	} else {
-		for _, himno := range tema.Himnos {
-			if len(counter) == 0 {
-				fmt.Println("\t", himno.ID, himno.Titulo)
-			} else {
-				fmt.Println("\t\t", himno.ID, himno.Titulo)
-			}
-		}
-	}
-}
 
 // Converts an himno model from the old database to the new Song model.
 //
 // It extracts the music_sheet and voices of hymns and stores them in the new database with the new model.
 func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories []primitive.ObjectID) models.Song {
+	var music_sheet primitive.ObjectID
+	voices_object := []models.Voice{}
 	chords := true
 	new_verses := ""
 	number := 1
@@ -58,33 +32,32 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		new_verses += fmt.Sprintf("%s\n\n", parrafo.Parrafo)
 	}
 
-	music_sheet := uploadFile(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
-	voices := []string{"Bajo", "ContraAlto", "Soprano", "Tenor", "Todos"}
-	voices_object := []models.Voice{}
-
-	all_voices := true
-	for _, voice := range voices {
-		if _, err := os.Stat(fmt.Sprintf("./assets/voices/%v/%v.mp3", himno.ID, voice)); err != nil {
-			all_voices = false
-			break
-		}
-	}
-
-	if all_voices {
-		for _, voice := range voices {
-			path := fmt.Sprintf("./assets/voices/%v/%v.mp3", himno.ID, voice)
-			id := uploadFile(path)
-			voices_object = append(voices_object, models.Voice{
-				Voice:    voice,
-				File:     id,
-				Duration: getFileDuration(path),
-			})
-		}
-	}
-
 	// If the himno id is greater than 517 in the old database, it means is a Coro
 	if himno.ID > 517 {
 		himno.ID = himno.ID - 517
+	} else {
+		music_sheet = uploadFile(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
+		voices := []string{"Bajo", "ContraAlto", "Soprano", "Tenor", "Todos"}
+
+		all_voices := true
+		for _, voice := range voices {
+			if _, err := os.Stat(fmt.Sprintf("./assets/voices/%v/%v.mp3", himno.ID, voice)); err != nil {
+				all_voices = false
+				break
+			}
+		}
+
+		if all_voices {
+			for _, voice := range voices {
+				path := fmt.Sprintf("./assets/voices/%v/%v.mp3", himno.ID, voice)
+				id := uploadFile(path)
+				voices_object = append(voices_object, models.Voice{
+					Voice:    voice,
+					File:     id,
+					Duration: getFileDuration(path),
+				})
+			}
+		}
 	}
 
 	return models.Song{
@@ -104,54 +77,6 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 	}
 }
 
-// Checks if whether the element ID exists in the array.
-func contains(array []primitive.ObjectID, element primitive.ObjectID) bool {
-	for _, el := range array {
-		if el == element {
-			return true
-		}
-	}
-
-	return false
-}
-
-// Checks if a given song has already been added to the database.
-func checkIfExists(db *mongo.Database, song *models.Himno) bool {
-	itemCount, err := db.Collection("Songs").CountDocuments(context.TODO(), bson.M{"number": song.ID})
-	if err != nil {
-		panic(err)
-	}
-
-	return itemCount > 0
-}
-
-// Calculates the total duration in seconds of an MP3 file.
-func getFileDuration(path string) float64 {
-	t := 0.0
-
-	r, err := os.Open(path)
-	if err != nil {
-		panic(err)
-	}
-
-	d := mp3.NewDecoder(r)
-	var f mp3.Frame
-	skipped := 0
-
-	for {
-		if err := d.Decode(&f, &skipped); err != nil {
-			if err == io.EOF {
-				break
-			}
-			panic(err)
-		}
-
-		t = t + f.Duration().Seconds()
-	}
-
-	return t
-}
-
 // Adds a category to a specific himno in the himnos_tema dictionary.
 func addCategoryToHimno(himnos_tema *map[int]([]primitive.ObjectID), himno_id int, category_id primitive.ObjectID) {
 	// If the himno doesn't exists in the himnos_tema dictionary, we initialize the key with an empty array as a value
@@ -166,25 +91,14 @@ func addCategoryToHimno(himnos_tema *map[int]([]primitive.ObjectID), himno_id in
 	}
 }
 
-// Uploads a file to the mongodb database
-func uploadFile(path string) primitive.ObjectID {
-	data, err := ioutil.ReadFile(path)
-	id := primitive.ObjectID{}
-	if err != nil {
-		fmt.Println("No se encontró el archivo:", path)
-	}
-
-	id = mongodb.UploadFile(data, fmt.Sprintf("%v.%v", primitive.NewObjectID().Hex(), filepath.Ext(path)))
-
-	return id
-}
-
 func Migrate() {
 	// Initializng database
 	mongodb.CleanDatabase()
 	mongodb.InitDatabase()
 
 	db := mongodb.GetMongoDBConnection()
+
+	addBibleBooks(db)
 
 	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
 		"code":        "ES",

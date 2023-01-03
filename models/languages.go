@@ -70,6 +70,17 @@ func (n *Language) GetLanguageByCode(code string, reader_code string) Language {
 	return result
 }
 
+func (n *Language) CreateLanguage(reader_code string) (Language, error) {
+	db := mongodb.GetMongoDBConnection()
+	n.ID = primitive.NewObjectID()
+
+	if _, err := db.Collection("Languages").InsertOne(context.TODO(), n); err != nil {
+		return Language{}, err
+	}
+
+	return new(Language).GetLanguageByCode(n.Code, reader_code), nil
+}
+
 func (n *Language) UpdateLanguage(code string) error {
 	db := mongodb.GetMongoDBConnection()
 

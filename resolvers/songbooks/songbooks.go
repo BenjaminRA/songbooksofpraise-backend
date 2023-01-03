@@ -9,8 +9,6 @@ import (
 )
 
 func GetSongbooks(p graphql.ResolveParams) (interface{}, error) {
-	fmt.Println(p.Context)
-	fmt.Println(p.Context.Value("language"))
 	lang := p.Context.Value("language").(string)
 	songbooks := new(models.Songbook).GetAllSongbooks(lang)
 
