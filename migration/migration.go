@@ -36,8 +36,15 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 	if himno.ID > 517 {
 		himno.ID = himno.ID - 517
 	} else {
-		music_sheet = uploadFile(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
+		music_sheet = mongodb.UploadFilePath(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
 		voices := []string{"Bajo", "ContraAlto", "Soprano", "Tenor", "Todos"}
+		voices_map := map[string]string{
+			"Bajo":       "bass",
+			"ContraAlto": "contralto",
+			"Soprano":    "soprano",
+			"Tenor":      "tenor",
+			"Todos":      "all",
+		}
 
 		all_voices := true
 		for _, voice := range voices {
@@ -50,9 +57,9 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		if all_voices {
 			for _, voice := range voices {
 				path := fmt.Sprintf("./assets/voices/%v/%v.mp3", himno.ID, voice)
-				id := uploadFile(path)
+				id := mongodb.UploadFilePath(path)
 				voices_object = append(voices_object, models.Voice{
-					Voice:    voice,
+					Voice:    voices_map[voice],
 					File:     id,
 					Duration: getFileDuration(path),
 				})

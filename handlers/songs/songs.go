@@ -28,7 +28,10 @@ import (
 
 func GetMusicSheet(c *gin.Context) {
 	id := c.Param("id")
-	data, filename := new(models.Song).GetMusicSheet(id)
+	data, filename, err := new(models.Song).GetMusicSheet(id)
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, err)
+	}
 
 	c.Header("Content-Disposition", "attachment; filename="+filename)
 	c.Data(http.StatusOK, "application/octet-stream", data)

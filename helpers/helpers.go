@@ -1,10 +1,15 @@
 package helpers
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
+	"os"
 	"reflect"
+	"time"
 
 	"github.com/BenjaminRA/himnario-backend/models"
+	"github.com/joho/godotenv"
 )
 
 func Map(t interface{}, function func(interface{}) interface{}) interface{} {
@@ -49,4 +54,18 @@ func BindJSON(jsonObject interface{}, object interface{}) error {
 	}
 
 	return nil
+}
+
+func LoadLocalEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func GetSecretString() string {
+	LoadLocalEnv()
+	hash := sha256.New()
+	secret := hash.Sum([]byte(fmt.Sprintf("%s____%s", os.Getenv("SECRET"), time.Now())))
+	return fmt.Sprintf("%x", secret)
 }

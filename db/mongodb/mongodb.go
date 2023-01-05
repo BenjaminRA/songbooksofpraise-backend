@@ -3,7 +3,9 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -98,4 +100,16 @@ func CleanDatabase() {
 	db := GetMongoDBConnection()
 
 	db.Drop(context.TODO())
+}
+
+// Uploads a file to the mongodb database
+func UploadFilePath(path string) primitive.ObjectID {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("No se encontró el archivo:", path)
+	}
+
+	id := UploadFile(data, fmt.Sprintf("%v.%v", primitive.NewObjectID().Hex(), filepath.Ext(path)))
+
+	return id
 }

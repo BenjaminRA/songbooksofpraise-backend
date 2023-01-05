@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	handlers "github.com/BenjaminRA/himnario-backend/handlers/songs"
+	files_handler "github.com/BenjaminRA/himnario-backend/handlers/files"
+	song_handler "github.com/BenjaminRA/himnario-backend/handlers/songs"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
 	migration "github.com/BenjaminRA/himnario-backend/migration"
 	"github.com/BenjaminRA/himnario-backend/schema"
@@ -75,8 +76,9 @@ func main() {
 
 	// router.GET("/songs", route_songs.GetSongs)
 	// router.GET("/songs/:id", route_songs.GetSongsById)
-	router.GET("/songs/:id/music_sheet", handlers.GetMusicSheet)
-	// router.GET("/songs/:id/voices/:voice", route_songs.GetVoicesByVoice)
+	router.GET("/songs/:id/music_sheet", song_handler.GetMusicSheet)
+	router.GET("/songs/:id/voices/:voice", song_handler.GetVoicesByVoice)
+	router.POST("/files", files_handler.PostFile)
 
 	// router.GET("/songbooks", route_songbooks.GetSongbooks)
 	// router.POST("/songbooks", route_songbooks.PostSongbook)

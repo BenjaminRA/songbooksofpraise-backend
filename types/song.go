@@ -42,17 +42,10 @@ var Song = graphql.NewObject(
 			"chords": &graphql.Field{
 				Type: graphql.Boolean,
 			},
-			"music_sheet": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					id := p.Source.(models.Song).MusicSheet.Hex()
-					return id, nil
-				},
-			},
-			"music": &graphql.Field{
-				Type: graphql.String,
-			},
 			"author": &graphql.Field{
+				Type: graphql.String,
+			},
+			"youtube_link": &graphql.Field{
 				Type: graphql.String,
 			},
 			"description": &graphql.Field{
@@ -89,16 +82,34 @@ var NewSong = graphql.NewInputObject(graphql.InputObjectConfig{
 		"title": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
 		},
+		"music_sheet_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"music_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"soprano_voice_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"contralto_voice_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"tenor_voice_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"bass_voice_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"all_voice_audio_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
 		"chords": &graphql.InputObjectFieldConfig{
 			Type: graphql.Boolean,
 		},
-		"music_sheet": &graphql.InputObjectFieldConfig{
-			Type: graphql.String,
-		},
-		"music": &graphql.InputObjectFieldConfig{
-			Type: graphql.String,
-		},
 		"author": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"youtube_link": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
 		},
 		"description": &graphql.InputObjectFieldConfig{
@@ -112,12 +123,6 @@ var NewSong = graphql.NewInputObject(graphql.InputObjectConfig{
 		},
 		"text": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
-		},
-		"created_at": &graphql.InputObjectFieldConfig{
-			Type: graphql.DateTime,
-		},
-		"updated_at": &graphql.InputObjectFieldConfig{
-			Type: graphql.DateTime,
 		},
 	},
 })

@@ -3,6 +3,7 @@ package schema
 import (
 	resolver_categories "github.com/BenjaminRA/himnario-backend/resolvers/categories"
 	resolver_songbooks "github.com/BenjaminRA/himnario-backend/resolvers/songbooks"
+	resolver_songs "github.com/BenjaminRA/himnario-backend/resolvers/songs"
 	"github.com/BenjaminRA/himnario-backend/types"
 	"github.com/graphql-go/graphql"
 )
@@ -167,13 +168,14 @@ var Mutation = graphql.ObjectConfig{
 				},
 			},
 			Description: "Update an existing song",
+			Resolve:     resolver_songs.UpdateSong,
 		},
 
 		"deleteSong": &graphql.Field{
 			Type: types.Song,
 			Args: graphql.FieldConfigArgument{
-				"song": &graphql.ArgumentConfig{
-					Type: types.NewSong,
+				"_id": &graphql.ArgumentConfig{
+					Type: graphql.String,
 				},
 			},
 			Description: "Delete a song",

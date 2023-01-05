@@ -1,10 +1,9 @@
 package songs
 
 import (
-	"net/http"
+	"fmt"
 
 	"github.com/BenjaminRA/himnario-backend/models"
-	"github.com/gin-gonic/gin"
 	"github.com/graphql-go/graphql"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -50,43 +49,33 @@ func GetSongById(p graphql.ResolveParams) (interface{}, error) {
 	return song, nil
 }
 
-func GetMusicSheet(c *gin.Context) {
-	id := c.Param("id")
-	data, filename := new(models.Song).GetMusicSheet(id)
+func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
+	id := p.Args["_id"].(string)
+	new_song := p.Args["song"].(map[string]interface{})
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
-}
+	song := new(models.Song).GetSongByID(id)
 
-func GetVoicesByVoice(c *gin.Context) {
-	id := c.Param("id")
-	voice := c.Param("voice")
-	data, filename, err := new(models.Song).GetVoice(id, voice)
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, err)
+	value := ""
+	if new_song["music_sheet_path"] != nil {
+		value = new_song["music_sheet_path"].(string)
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
+	err := song.UpdateMusicSheet(value)
+	if err != nil {
+		return nil, err
+	}
+
+	if song.ID.Hex() == "000000000000000000000000" {
+		return nil, fmt.Errorf("songbook not found")
+	}
+
+	// if err := helpers.BindJSON(p.Args["songbook"], &songbook); err != nil {
+	// 	return nil, err
+	// }
+
+	// if err := songbook.UpdateSongbook(); err != nil {
+	// 	return nil, err
+	// }
+
+	return song, nil
 }
-
-// func UpdateSongbook(p graphql.ResolveParams) (interface{}, error) {
-// 	id := p.Args["_id"].(string)
-// 	lang := p.Context.Value("language").(string)
-
-// 	song := new(models.Song).GetSongByID(id, lang)
-
-// 	if songbook.ID.Hex() == "000000000000000000000000" {
-// 		return nil, fmt.Errorf("songbook not found")
-// 	}
-
-// 	if err := helpers.BindJSON(p.Args["songbook"], &songbook); err != nil {
-// 		return nil, err
-// 	}
-
-// 	if err := songbook.UpdateSongbook(); err != nil {
-// 		return nil, err
-// 	}
-
-// 	return songbook, nil
-// }
