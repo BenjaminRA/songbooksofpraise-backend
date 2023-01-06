@@ -76,6 +76,7 @@ func main() {
 
 	// router.GET("/songs", route_songs.GetSongs)
 	// router.GET("/songs/:id", route_songs.GetSongsById)
+	router.GET("/songs/:id/music", song_handler.GetMusic)
 	router.GET("/songs/:id/music_sheet", song_handler.GetMusicSheet)
 	router.GET("/songs/:id/voices/:voice", song_handler.GetVoicesByVoice)
 	router.POST("/files", files_handler.PostFile)

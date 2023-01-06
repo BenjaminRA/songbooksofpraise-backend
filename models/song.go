@@ -5,30 +5,34 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
+	"github.com/tcolgate/mp3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 type Song struct {
 	ID           primitive.ObjectID   `json:"_id" bson:"_id"`
 	SongbookID   primitive.ObjectID   `json:"songbook_id" bson:"songbook_id"`
-	Categories   []Category           `json:"categories" bson:"categories"`
+	Categories   []Category           `json:"categories,omitempty" bson:"categories,omitempty"`
 	CategoriesID []primitive.ObjectID `json:"categories_id" bson:"categories_id"`
 	Title        string               `json:"title" bson:"title"`
 	Chords       bool                 `json:"chords" bson:"chords"`
-	MusicSheet   primitive.ObjectID   `json:"music_sheet" bson:"music_sheet"` //url
-	Music        string               `json:"music" bson:"music"`             //url
-	Author       string               `json:"author" bson:"author"`
-	YouTubeLink  string               `json:"youtube_link" bson:"youtube_link"`
-	Description  string               `json:"description" bson:"description"`
-	BibleVerse   string               `json:"bible_verse" bson:"bible_verse"`
-	Number       int                  `json:"number" bson:"number"`
+	MusicSheet   primitive.ObjectID   `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"` //url
+	Music        primitive.ObjectID   `json:"music,omitempty" bson:"music,omitempty"`             //url
+	Author       string               `json:"author,omitempty" bson:"author,omitempty"`
+	YouTubeLink  string               `json:"youtube_link,omitempty" bson:"youtube_link,omitempty"`
+	Description  string               `json:"description,omitempty" bson:"description,omitempty"`
+	BibleVerse   string               `json:"bible_verse,omitempty" bson:"bible_verse,omitempty"`
+	Number       int                  `json:"number,omitempty" bson:"number,omitempty"`
 	Text         string               `json:"text" bson:"text"`
-	Voices       []Voice              `json:"voices" bson:"voices"`
+	Voices       []Voice              `json:"voices,omitempty" bson:"voices,omitempty"`
 }
 
 func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
@@ -115,7 +119,6 @@ func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {
 		fmt.Println(err)
 		return nil, "", err
 	}
-	// you can print out the result
 
 	var results_object bson.M
 	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music_sheet"]}).Decode(&results_object)
@@ -129,6 +132,43 @@ func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {
 	)
 	var buf bytes.Buffer
 	_, err = bucket.DownloadToStream(results["music_sheet"], &buf)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+	return buf.Bytes(), results_object["filename"].(string), nil
+}
+
+func (n *Song) GetMusic(id string) ([]byte, string, error) {
+	db := mongodb.GetMongoDBConnection()
+	object_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		panic(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var results bson.M
+	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+	// you can print out the result
+
+	var results_object bson.M
+	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music"]}).Decode(&results_object)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	bucket, _ := gridfs.NewBucket(
+		db,
+	)
+	var buf bytes.Buffer
+	_, err = bucket.DownloadToStream(results["music"], &buf)
 	if err != nil {
 		fmt.Println(err)
 		return nil, "", err
@@ -150,9 +190,14 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
 	if err != nil {
 		fmt.Println(err)
+		return nil, "", err
 	}
 
 	var file_id primitive.ObjectID
+
+	if results["voices"] == nil {
+		return nil, "", errors.New("this song does not contain voices")
+	}
 
 	for _, el := range results["voices"].(bson.A) {
 		if el.(bson.M)["voice"].(string) == voice {
@@ -168,6 +213,7 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": file_id}).Decode(&results_object)
 	if err != nil {
 		fmt.Println(err)
+		return nil, "", err
 	}
 
 	bucket, _ := gridfs.NewBucket(
@@ -176,10 +222,44 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 	var buf bytes.Buffer
 	_, err = bucket.DownloadToStream(file_id, &buf)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
+		return nil, "", err
 	}
 
 	return buf.Bytes(), results_object["filename"].(string), nil
+}
+
+func (n *Song) DeleteFileByID(id primitive.ObjectID, db *mongo.Database, ctx context.Context) error {
+	_, err := db.Collection("fs.files").DeleteMany(ctx, bson.M{"_id": id})
+	return err
+}
+
+func (n *Song) SetField(field string, value interface{}, db *mongo.Database) error {
+	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
+		"_id": n.ID,
+	}, bson.M{
+		"$set": bson.M{
+			field:        value,
+			"updated_at": time.Now(),
+		},
+	})
+
+	return err
+}
+
+func (n *Song) UnsetField(field string, db *mongo.Database) error {
+	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
+		"_id": n.ID,
+	}, bson.M{
+		"$set": bson.M{
+			"updated_at": time.Now(),
+		},
+		"$unset": bson.M{
+			field: "",
+		},
+	})
+
+	return err
 }
 
 func (n *Song) UpdateMusicSheet(path string) error {
@@ -196,34 +276,170 @@ func (n *Song) UpdateMusicSheet(path string) error {
 	}
 
 	// Delete current music sheet
-	_, err := db.Collection("fs.files").DeleteMany(ctx, bson.M{"_id": n.MusicSheet})
+	err := n.DeleteFileByID(n.MusicSheet, db, ctx)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
 	if path != "" {
 		n.MusicSheet = mongodb.UploadFilePath(path)
-		db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
-			"_id": n.ID,
-		}, bson.M{
-			"$set": bson.M{
-				"music_sheet": n.MusicSheet,
-				"updated_at":  time.Now(),
-			},
-		})
+		os.Remove(path)
+		n.SetField("music_sheet", n.MusicSheet, db)
 	} else {
-		db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
-			"_id": n.ID,
-		}, bson.M{
-			"$set": bson.M{
-				"updated_at": time.Now(),
-			},
-			"$unset": bson.M{
-				"music_sheet": "",
-			},
-		})
+		n.UnsetField("music_sheet", db)
 	}
 
 	return nil
+}
+
+func (n *Song) UpdateMusicAudio(path string) error {
+	if path == "__same__" {
+		return nil
+	}
+
+	db := mongodb.GetMongoDBConnection()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if n.ID.Hex() == "000000000000000000000000" {
+		return fmt.Errorf("Song not found")
+	}
+
+	// Delete current music
+	err := n.DeleteFileByID(n.Music, db, ctx)
+	if err != nil {
+		return err
+	}
+
+	if path != "" {
+		n.Music = mongodb.UploadFilePath(path)
+		os.Remove(path)
+		n.SetField("music", n.Music, db)
+	} else {
+		n.UnsetField("music", db)
+	}
+
+	return nil
+}
+
+func (n *Song) UpdateVoices(path string, voice string) error {
+	if path == "__same__" {
+		return nil
+	}
+	db := mongodb.GetMongoDBConnection()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if n.ID.Hex() == "000000000000000000000000" {
+		return fmt.Errorf("Song not found")
+	}
+
+	// Get voice to edit
+	var voice_pointer *Voice
+	var voice_index int
+	for idx, item := range n.Voices {
+		if item.Voice == voice {
+			voice_pointer = &item
+			voice_index = idx
+			break
+		}
+	}
+
+	if voice_pointer != nil {
+		// Delete current voice
+		err := n.DeleteFileByID(voice_pointer.File, db, ctx)
+		if err != nil {
+			return err
+		}
+
+		// voice has been deleted
+		if path != "" {
+			duration := GetFileDuration(path)
+			(*voice_pointer).File = mongodb.UploadFilePath(path)
+			(*voice_pointer).Duration = duration
+			os.Remove(path)
+			n.SetField("voices", n.Voices, db)
+			// Voice has been replaced
+		} else {
+			if len(n.Voices) == 1 {
+				n.UnsetField("voices", db)
+				n.Voices = nil
+			} else {
+				copy(n.Voices[voice_index:], n.Voices[voice_index+1:])
+				n.Voices = n.Voices[:len(n.Voices)-1]
+				n.SetField("voices", n.Voices, db)
+			}
+		}
+		// This voices has just been added
+	} else {
+		if n.Voices == nil {
+			n.Voices = []Voice{}
+		}
+
+		duration := GetFileDuration(path)
+		new_voice := Voice{
+			Voice:    voice,
+			File:     mongodb.UploadFilePath(path),
+			Duration: duration,
+		}
+		os.Remove(path)
+
+		n.Voices = append(n.Voices, new_voice)
+		n.SetField("voices", n.Voices, db)
+	}
+
+	return nil
+}
+
+func (n *Song) UpdateSong() error {
+	db := mongodb.GetMongoDBConnection()
+
+	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
+		"_id": n.ID,
+	}, bson.M{
+		"$set": bson.M{
+			"songbook_id":   n.SongbookID,
+			"categories_id": n.CategoriesID,
+			"title":         n.Title,
+			"chords":        n.Chords,
+			"author":        n.Author,
+			"youtube_link":  n.YouTubeLink,
+			"description":   n.Description,
+			"bible_verse":   n.BibleVerse,
+			"number":        n.Number,
+			"text":          n.Text,
+			"updated_at":    time.Now(),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetFileDuration(path string) float64 {
+	t := 0.0
+
+	r, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+
+	d := mp3.NewDecoder(r)
+	var f mp3.Frame
+	skipped := 0
+
+	for {
+		if err := d.Decode(&f, &skipped); err != nil {
+			if err == io.EOF {
+				break
+			}
+			panic(err)
+		}
+
+		t = t + f.Duration().Seconds()
+	}
+
+	return t
 }

@@ -30,7 +30,20 @@ func GetMusicSheet(c *gin.Context) {
 	id := c.Param("id")
 	data, filename, err := new(models.Song).GetMusicSheet(id)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, err)
+		c.JSON(http.StatusNotFound, err)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Data(http.StatusOK, "application/octet-stream", data)
+}
+
+func GetMusic(c *gin.Context) {
+	id := c.Param("id")
+	data, filename, err := new(models.Song).GetMusic(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, err)
+		return
 	}
 
 	c.Header("Content-Disposition", "attachment; filename="+filename)
@@ -42,7 +55,8 @@ func GetVoicesByVoice(c *gin.Context) {
 	voice := c.Param("voice")
 	data, filename, err := new(models.Song).GetVoice(id, voice)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, err)
+		c.JSON(http.StatusNotFound, err)
+		return
 	}
 
 	c.Header("Content-Disposition", "attachment; filename="+filename)

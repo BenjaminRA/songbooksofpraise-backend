@@ -2,7 +2,9 @@ package songs
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/BenjaminRA/himnario-backend/helpers"
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/graphql-go/graphql"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -55,27 +57,46 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 
 	song := new(models.Song).GetSongByID(id)
 
-	value := ""
-	if new_song["music_sheet_path"] != nil {
-		value = new_song["music_sheet_path"].(string)
+	files := []string{"music_sheet_path",
+		"music_audio_path",
+		"soprano_voice_audio_path",
+		"contralto_voice_audio_path",
+		"tenor_voice_audio_path",
+		"bass_voice_audio_path",
+		"all_voice_audio_path",
 	}
 
-	err := song.UpdateMusicSheet(value)
-	if err != nil {
-		return nil, err
+	for _, file := range files {
+		value := ""
+		if new_song[file] != nil {
+			value = new_song[file].(string)
+		}
+
+		var err error = nil
+		switch file {
+		case "music_sheet_path":
+			err = song.UpdateMusicSheet(value)
+		case "music_audio_path":
+			err = song.UpdateMusicAudio(value)
+		default:
+			err = song.UpdateVoices(value, strings.Split(file, "_")[0])
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if song.ID.Hex() == "000000000000000000000000" {
-		return nil, fmt.Errorf("songbook not found")
+		return nil, fmt.Errorf("song not found")
 	}
 
-	// if err := helpers.BindJSON(p.Args["songbook"], &songbook); err != nil {
-	// 	return nil, err
-	// }
+	if err := helpers.BindJSON(new_song, &song); err != nil {
+		return nil, err
+	}
 
-	// if err := songbook.UpdateSongbook(); err != nil {
-	// 	return nil, err
-	// }
+	if err := song.UpdateSong(); err != nil {
+		return nil, err
+	}
 
 	return song, nil
 }

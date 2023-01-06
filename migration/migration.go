@@ -61,7 +61,7 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 				voices_object = append(voices_object, models.Voice{
 					Voice:    voices_map[voice],
 					File:     id,
-					Duration: getFileDuration(path),
+					Duration: models.GetFileDuration(path),
 				})
 			}
 		}
@@ -77,10 +77,6 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		CategoriesID: categories,
 		MusicSheet:   music_sheet,
 		Voices:       voices_object,
-		Music:        "",
-		Author:       "",
-		Description:  "",
-		BibleVerse:   "",
 	}
 }
 
