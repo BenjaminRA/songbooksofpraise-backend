@@ -50,6 +50,18 @@ func GetMusic(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
+func GetMusicOnly(c *gin.Context) {
+	id := c.Param("id")
+	data, filename, err := new(models.Song).GetMusicOnly(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, err)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Data(http.StatusOK, "application/octet-stream", data)
+}
+
 func GetVoicesByVoice(c *gin.Context) {
 	id := c.Param("id")
 	voice := c.Param("voice")

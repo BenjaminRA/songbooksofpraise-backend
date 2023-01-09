@@ -88,6 +88,9 @@ var NewSong = graphql.NewInputObject(graphql.InputObjectConfig{
 		"music_audio_path": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
 		},
+		"music_audio_only_path": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
 		"soprano_voice_audio_path": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
 		},

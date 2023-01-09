@@ -24,8 +24,9 @@ type Song struct {
 	CategoriesID []primitive.ObjectID `json:"categories_id" bson:"categories_id"`
 	Title        string               `json:"title" bson:"title"`
 	Chords       bool                 `json:"chords" bson:"chords"`
-	MusicSheet   primitive.ObjectID   `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"` //url
-	Music        primitive.ObjectID   `json:"music,omitempty" bson:"music,omitempty"`             //url
+	MusicSheet   primitive.ObjectID   `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"`
+	Music        primitive.ObjectID   `json:"music,omitempty" bson:"music,omitempty"`
+	MusicOnly    primitive.ObjectID   `json:"music_only,omitempty" bson:"music_only,omitempty"`
 	Author       string               `json:"author,omitempty" bson:"author,omitempty"`
 	YouTubeLink  string               `json:"youtube_link,omitempty" bson:"youtube_link,omitempty"`
 	Description  string               `json:"description,omitempty" bson:"description,omitempty"`
@@ -107,7 +108,8 @@ func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return nil, "", err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -143,7 +145,8 @@ func (n *Song) GetMusic(id string) ([]byte, string, error) {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return nil, "", err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -169,6 +172,44 @@ func (n *Song) GetMusic(id string) ([]byte, string, error) {
 	)
 	var buf bytes.Buffer
 	_, err = bucket.DownloadToStream(results["music"], &buf)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+	return buf.Bytes(), results_object["filename"].(string), nil
+}
+
+func (n *Song) GetMusicOnly(id string) ([]byte, string, error) {
+	db := mongodb.GetMongoDBConnection()
+	object_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var results bson.M
+	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+	// you can print out the result
+
+	var results_object bson.M
+	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music_only"]}).Decode(&results_object)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	bucket, _ := gridfs.NewBucket(
+		db,
+	)
+	var buf bytes.Buffer
+	_, err = bucket.DownloadToStream(results["music_only"], &buf)
 	if err != nil {
 		fmt.Println(err)
 		return nil, "", err
@@ -287,6 +328,36 @@ func (n *Song) UpdateMusicSheet(path string) error {
 		n.SetField("music_sheet", n.MusicSheet, db)
 	} else {
 		n.UnsetField("music_sheet", db)
+	}
+
+	return nil
+}
+
+func (n *Song) UpdateMusicAudioOnly(path string) error {
+	if path == "__same__" {
+		return nil
+	}
+
+	db := mongodb.GetMongoDBConnection()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if n.ID.Hex() == "000000000000000000000000" {
+		return fmt.Errorf("Song not found")
+	}
+
+	// Delete current music
+	err := n.DeleteFileByID(n.MusicOnly, db, ctx)
+	if err != nil {
+		return err
+	}
+
+	if path != "" {
+		n.MusicOnly = mongodb.UploadFilePath(path)
+		os.Remove(path)
+		n.SetField("music_only", n.MusicOnly, db)
+	} else {
+		n.UnsetField("music_only", db)
 	}
 
 	return nil

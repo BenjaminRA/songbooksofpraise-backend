@@ -59,6 +59,7 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 
 	files := []string{"music_sheet_path",
 		"music_audio_path",
+		"music_audio_only_path",
 		"soprano_voice_audio_path",
 		"contralto_voice_audio_path",
 		"tenor_voice_audio_path",
@@ -67,6 +68,7 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 	}
 
 	for _, file := range files {
+		fmt.Println(file)
 		value := ""
 		if new_song[file] != nil {
 			value = new_song[file].(string)
@@ -78,6 +80,8 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 			err = song.UpdateMusicSheet(value)
 		case "music_audio_path":
 			err = song.UpdateMusicAudio(value)
+		case "music_audio_only_path":
+			err = song.UpdateMusicAudioOnly(value)
 		default:
 			err = song.UpdateVoices(value, strings.Split(file, "_")[0])
 		}
