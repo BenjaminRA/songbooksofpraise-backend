@@ -1,13 +1,16 @@
 package mongodb
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
@@ -112,4 +115,41 @@ func UploadFilePath(path string) primitive.ObjectID {
 	id := UploadFile(data, fmt.Sprintf("%v.%v", primitive.NewObjectID().Hex(), filepath.Ext(path)))
 
 	return id
+}
+
+func FetchFile(collection string, document_id string, field string) ([]byte, string, error) {
+	db := GetMongoDBConnection()
+	object_id, err := primitive.ObjectIDFromHex(document_id)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var results bson.M
+	err = db.Collection(collection).FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	var results_object bson.M
+	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results[field]}).Decode(&results_object)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+
+	bucket, _ := gridfs.NewBucket(
+		db,
+	)
+	var buf bytes.Buffer
+	_, err = bucket.DownloadToStream(results[field], &buf)
+	if err != nil {
+		fmt.Println(err)
+		return nil, "", err
+	}
+	return buf.Bytes(), results_object["filename"].(string), nil
 }

@@ -34,6 +34,8 @@ type Song struct {
 	Number       int                  `json:"number,omitempty" bson:"number,omitempty"`
 	Text         string               `json:"text" bson:"text"`
 	Voices       []Voice              `json:"voices,omitempty" bson:"voices,omitempty"`
+	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
 }
 
 func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
@@ -105,116 +107,15 @@ func (n *Song) GetSongByID(id string) Song {
 }
 
 func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var results bson.M
-	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	var results_object bson.M
-	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music_sheet"]}).Decode(&results_object)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	bucket, _ := gridfs.NewBucket(
-		db,
-	)
-	var buf bytes.Buffer
-	_, err = bucket.DownloadToStream(results["music_sheet"], &buf)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-	return buf.Bytes(), results_object["filename"].(string), nil
+	return mongodb.FetchFile("Songs", id, "music_sheet")
 }
 
 func (n *Song) GetMusic(id string) ([]byte, string, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var results bson.M
-	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-	// you can print out the result
-
-	var results_object bson.M
-	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music"]}).Decode(&results_object)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	bucket, _ := gridfs.NewBucket(
-		db,
-	)
-	var buf bytes.Buffer
-	_, err = bucket.DownloadToStream(results["music"], &buf)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-	return buf.Bytes(), results_object["filename"].(string), nil
+	return mongodb.FetchFile("Songs", id, "music")
 }
 
 func (n *Song) GetMusicOnly(id string) ([]byte, string, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var results bson.M
-	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-	// you can print out the result
-
-	var results_object bson.M
-	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": results["music_only"]}).Decode(&results_object)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	bucket, _ := gridfs.NewBucket(
-		db,
-	)
-	var buf bytes.Buffer
-	_, err = bucket.DownloadToStream(results["music_only"], &buf)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-	return buf.Bytes(), results_object["filename"].(string), nil
+	return mongodb.FetchFile("Songs", id, "music_only")
 }
 
 func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
@@ -489,6 +390,21 @@ func (n *Song) UpdateSong() error {
 	return nil
 }
 
+func (n *Song) CreateSong() error {
+	db := mongodb.GetMongoDBConnection()
+
+	n.ID = primitive.NewObjectID()
+	n.CreatedAt = time.Now()
+	n.UpdatedAt = time.Now()
+
+	_, err := db.Collection("Songs").InsertOne(context.TODO(), n)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetFileDuration(path string) float64 {
 	t := 0.0
 
@@ -513,4 +429,22 @@ func GetFileDuration(path string) float64 {
 	}
 
 	return t
+}
+
+func CleanUpSongTemp(song map[string]interface{}) {
+	files := []string{"music_sheet_path",
+		"music_audio_path",
+		"music_audio_only_path",
+		"soprano_voice_audio_path",
+		"contralto_voice_audio_path",
+		"tenor_voice_audio_path",
+		"bass_voice_audio_path",
+		"all_voice_audio_path",
+	}
+	for _, file := range files {
+		if song[file] != nil {
+			value := song[file].(string)
+			os.Remove(value)
+		}
+	}
 }

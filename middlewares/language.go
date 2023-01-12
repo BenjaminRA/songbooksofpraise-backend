@@ -8,7 +8,7 @@ import (
 
 func LanguageParser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		lang := c.GetHeader("Language")
+		lang := c.GetHeader("Accept-Language")
 		if lang == "" {
 			lang = "EN"
 		}

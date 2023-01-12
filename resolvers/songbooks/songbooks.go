@@ -60,7 +60,7 @@ func CreateSongbook(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	songbook, err := songbook.CreateSongbook(songbook, lang)
+	songbook, err := songbook.CreateSongbook(lang)
 	if err != nil {
 		return nil, err
 	}

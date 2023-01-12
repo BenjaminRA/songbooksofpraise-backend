@@ -77,6 +77,8 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 		CategoriesID: categories,
 		MusicSheet:   music_sheet,
 		Voices:       voices_object,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 }
 

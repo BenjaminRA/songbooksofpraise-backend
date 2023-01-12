@@ -155,6 +155,7 @@ var Mutation = graphql.ObjectConfig{
 				},
 			},
 			Description: "Create a new song",
+			Resolve:     resolver_songs.CreateSong,
 		},
 
 		"updateSong": &graphql.Field{

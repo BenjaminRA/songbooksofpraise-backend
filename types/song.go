@@ -1,6 +1,10 @@
 package types
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/graphql-go/graphql"
 )
@@ -53,6 +57,30 @@ var Song = graphql.NewObject(
 			},
 			"bible_verse": &graphql.Field{
 				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					bibleVerse := p.Source.(models.Song).BibleVerse
+					language_code := p.Context.Value("language").(string)
+
+					if bibleVerse != "" {
+						r := regexp.MustCompile("{[1-9a-z]*}")
+
+						// replace bible book code with actual book name
+						res := r.ReplaceAllStringFunc(bibleVerse, func(match string) string {
+							fmt.Println(match)
+							tmp := strings.Replace(match, "{", "", 1)
+							tmp = strings.Replace(tmp, "}", "", 1)
+
+							bibleVerseObject := new(models.BibleBook).GetBibleBookByCode(language_code, tmp)
+							fmt.Println(bibleVerseObject)
+
+							return bibleVerseObject.Book
+						})
+
+						return res, nil
+					}
+
+					return bibleVerse, nil
+				},
 			},
 			"number": &graphql.Field{
 				Type: graphql.Int,

@@ -200,28 +200,28 @@ func (n *Songbook) GetCategories() {
 	wg.Wait()
 }
 
-func (n *Songbook) CreateSongbook(songbook Songbook, lang string) (Songbook, error) {
+func (n *Songbook) CreateSongbook(lang string) (Songbook, error) {
 	db := mongodb.GetMongoDBConnection()
 
-	songbook.ID = primitive.NewObjectID()
-	songbook.CreatedAt = time.Now()
-	songbook.UpdatedAt = time.Now()
+	n.ID = primitive.NewObjectID()
+	n.CreatedAt = time.Now()
+	n.UpdatedAt = time.Now()
 
-	_, err := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+	_, err := db.Collection("Songbooks").InsertOne(context.TODO(), n)
 	if err != nil {
 		return Songbook{}, err
 	}
 
 	Category := Category{
 		ID:         primitive.NewObjectID(),
-		SongbookID: songbook.ID,
+		SongbookID: n.ID,
 		Category:   "Todos",
 		All:        true,
 	}
 
 	Category.CreateCategory()
 
-	return new(Songbook).GetSongbookByID(songbook.ID.Hex(), lang), nil
+	return new(Songbook).GetSongbookByID(n.ID.Hex(), lang), nil
 }
 
 func (n *Songbook) DeleteSongbook() error {

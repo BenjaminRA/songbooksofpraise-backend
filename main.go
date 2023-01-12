@@ -61,18 +61,18 @@ func main() {
 
 	router.POST("/graphql", graphqlHandler())
 
-	playgroundH := handler.New(&handler.Config{
-		Schema:     &schema,
-		Pretty:     true,
-		Playground: true,
-	})
+	// playgroundH := handler.New(&handler.Config{
+	// 	Schema:     &schema,
+	// 	Pretty:     true,
+	// 	Playground: true,
+	// })
 
-	playgroundHandler := func() gin.HandlerFunc {
-		return func(c *gin.Context) {
-			playgroundH.ServeHTTP(c.Writer, c.Request)
-		}
-	}
-	router.GET("/graphql", playgroundHandler())
+	// playgroundHandler := func() gin.HandlerFunc {
+	// 	return func(c *gin.Context) {
+	// 		playgroundH.ServeHTTP(c.Writer, c.Request)
+	// 	}
+	// }
+	// router.GET("/graphql", playgroundHandler())
 
 	// router.GET("/songs", route_songs.GetSongs)
 	// router.GET("/songs/:id", route_songs.GetSongsById)

@@ -55,7 +55,7 @@ func (n *BibleBook) GetBibleBookByCode(reader_code string, code string) BibleBoo
 
 	reader_code = strings.ToUpper(reader_code)
 
-	cursor, err := db.Collection("Categories").Find(context.TODO(), bson.M{
+	cursor, err := db.Collection("BibleBooks").Find(context.TODO(), bson.M{
 		"language_code": reader_code,
 		"code":          code,
 	})
