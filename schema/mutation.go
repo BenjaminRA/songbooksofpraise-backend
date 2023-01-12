@@ -180,6 +180,7 @@ var Mutation = graphql.ObjectConfig{
 				},
 			},
 			Description: "Delete a song",
+			Resolve:     resolver_songs.DeleteSong,
 		},
 	},
 }

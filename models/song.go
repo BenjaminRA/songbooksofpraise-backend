@@ -126,10 +126,8 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 		return nil, "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	var results bson.M
-	err = db.Collection("Songs").FindOne(ctx, bson.M{"_id": object_id}).Decode(&results)
+	err = db.Collection("Songs").FindOne(context.TODO(), bson.M{"_id": object_id}).Decode(&results)
 	if err != nil {
 		fmt.Println(err)
 		return nil, "", err
@@ -152,7 +150,7 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 	}
 
 	var results_object bson.M
-	err = db.Collection("fs.files").FindOne(ctx, bson.M{"_id": file_id}).Decode(&results_object)
+	err = db.Collection("fs.files").FindOne(context.TODO(), bson.M{"_id": file_id}).Decode(&results_object)
 	if err != nil {
 		fmt.Println(err)
 		return nil, "", err
@@ -167,7 +165,6 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 		fmt.Println(err.Error())
 		return nil, "", err
 	}
-
 	return buf.Bytes(), results_object["filename"].(string), nil
 }
 
@@ -210,15 +207,13 @@ func (n *Song) UpdateMusicSheet(path string) error {
 	}
 
 	db := mongodb.GetMongoDBConnection()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	if n.ID.Hex() == "000000000000000000000000" {
 		return fmt.Errorf("Song not found")
 	}
 
 	// Delete current music sheet
-	err := n.DeleteFileByID(n.MusicSheet, db, ctx)
+	err := n.DeleteFileByID(n.MusicSheet, db, context.TODO())
 	if err != nil {
 		return err
 	}
@@ -240,15 +235,13 @@ func (n *Song) UpdateMusicAudioOnly(path string) error {
 	}
 
 	db := mongodb.GetMongoDBConnection()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	if n.ID.Hex() == "000000000000000000000000" {
 		return fmt.Errorf("Song not found")
 	}
 
 	// Delete current music
-	err := n.DeleteFileByID(n.MusicOnly, db, ctx)
+	err := n.DeleteFileByID(n.MusicOnly, db, context.TODO())
 	if err != nil {
 		return err
 	}
@@ -270,15 +263,13 @@ func (n *Song) UpdateMusicAudio(path string) error {
 	}
 
 	db := mongodb.GetMongoDBConnection()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	if n.ID.Hex() == "000000000000000000000000" {
 		return fmt.Errorf("Song not found")
 	}
 
 	// Delete current music
-	err := n.DeleteFileByID(n.Music, db, ctx)
+	err := n.DeleteFileByID(n.Music, db, context.TODO())
 	if err != nil {
 		return err
 	}
@@ -299,8 +290,6 @@ func (n *Song) UpdateVoices(path string, voice string) error {
 		return nil
 	}
 	db := mongodb.GetMongoDBConnection()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	if n.ID.Hex() == "000000000000000000000000" {
 		return fmt.Errorf("Song not found")
@@ -319,7 +308,7 @@ func (n *Song) UpdateVoices(path string, voice string) error {
 
 	if voice_pointer != nil {
 		// Delete current voice
-		err := n.DeleteFileByID(voice_pointer.File, db, ctx)
+		err := n.DeleteFileByID(voice_pointer.File, db, context.TODO())
 		if err != nil {
 			return err
 		}
@@ -383,6 +372,43 @@ func (n *Song) UpdateSong() error {
 			"updated_at":    time.Now(),
 		},
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Song) DeleteSong() error {
+	db := mongodb.GetMongoDBConnection()
+
+	// Delete current music sheet
+	err := n.DeleteFileByID(n.Music, db, context.TODO())
+	if err != nil {
+		return err
+	}
+
+	// Delete current music only
+	err = n.DeleteFileByID(n.MusicOnly, db, context.TODO())
+	if err != nil {
+		return err
+	}
+
+	// Delete current music
+	err = n.DeleteFileByID(n.MusicSheet, db, context.TODO())
+	if err != nil {
+		return err
+	}
+
+	// Delete voices
+	for _, item := range n.Voices {
+		err = n.DeleteFileByID(item.File, db, context.TODO())
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = db.Collection("Songs").DeleteOne(context.TODO(), bson.M{"_id": n.ID})
 	if err != nil {
 		return err
 	}

@@ -201,3 +201,19 @@ func CreateSong(p graphql.ResolveParams) (interface{}, error) {
 
 	return song, nil
 }
+
+func DeleteSong(p graphql.ResolveParams) (interface{}, error) {
+	id := p.Args["_id"].(string)
+
+	song := new(models.Song).GetSongByID(id)
+
+	if song.ID.Hex() == "000000000000000000000000" {
+		return nil, fmt.Errorf("song not found")
+	}
+
+	if err := song.DeleteSong(); err != nil {
+		return nil, err
+	}
+
+	return song, nil
+}

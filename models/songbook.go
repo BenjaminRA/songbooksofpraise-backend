@@ -227,9 +227,17 @@ func (n *Songbook) CreateSongbook(lang string) (Songbook, error) {
 func (n *Songbook) DeleteSongbook() error {
 	db := mongodb.GetMongoDBConnection()
 
+	// Deleting all Songs
+	songs := new(Song).GetAllSongs(map[string]interface{}{
+		"songbook_id": n.ID,
+	})
+	for _, song := range songs {
+		song.DeleteSong()
+	}
+
 	// Deleting all Categories
-	aux := new(Songbook).GetSongbookByID(n.ID.Hex(), "")
-	for _, category := range aux.Categories {
+	categories := new(Songbook).GetSongbookByID(n.ID.Hex(), "")
+	for _, category := range categories.Categories {
 		category.DeleteCategory()
 	}
 
