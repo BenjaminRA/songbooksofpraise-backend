@@ -38,7 +38,7 @@ type Song struct {
 	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
 }
 
-func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
+func (n *Song) GetAllSongs(args map[string]interface{}) ([]Song, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
@@ -54,7 +54,7 @@ func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return []Song{}, err
 	}
 
 	result := []Song{}
@@ -65,14 +65,14 @@ func (n *Song) GetAllSongs(args map[string]interface{}) []Song {
 		result = append(result, elem)
 	}
 
-	return result
+	return result, nil
 }
 
-func (n *Song) GetSongByID(id string) Song {
+func (n *Song) GetSongByID(id string) (Song, error) {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		panic(err)
+		return Song{}, err
 	}
 
 	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
@@ -88,7 +88,7 @@ func (n *Song) GetSongByID(id string) Song {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return Song{}, err
 	}
 
 	result := []Song{}
@@ -100,10 +100,10 @@ func (n *Song) GetSongByID(id string) Song {
 	}
 
 	if len(result) == 0 {
-		return Song{}
+		return Song{}, fmt.Errorf("Song not found")
 	}
 
-	return result[0]
+	return result[0], nil
 }
 
 func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {

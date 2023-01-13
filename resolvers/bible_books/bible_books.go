@@ -7,7 +7,10 @@ import (
 
 func GetAllBibleBooks(p graphql.ResolveParams) (interface{}, error) {
 	reader_code := p.Context.Value("language").(string)
-	bible_books := new(models.BibleBook).GetAllBibleBooks(reader_code)
+	bible_books, err := new(models.BibleBook).GetAllBibleBooks(reader_code)
+	if err != nil {
+		return nil, err
+	}
 
 	return bible_books, nil
 }
@@ -19,7 +22,10 @@ func GetBibleBookByCode(p graphql.ResolveParams) (interface{}, error) {
 		return nil, nil
 	}
 
-	bible_book := new(models.BibleBook).GetBibleBookByCode(reader_code, code)
+	bible_book, err := new(models.BibleBook).GetBibleBookByCode(reader_code, code)
+	if err != nil {
+		return nil, err
+	}
 
 	return bible_book, nil
 }

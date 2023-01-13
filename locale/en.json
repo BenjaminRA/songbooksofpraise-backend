@@ -1,3 +1,5 @@
 {
-  "song.error.invalid_number": "The number %s is taken"
+  "song.error.invalid_number": "The number %s is taken",
+  "register.invalid.email": "This email is already in use",
+  "login.invalid.credentials": "Invalid credentials"
 }

@@ -72,7 +72,11 @@ func init() {
 				return nil, nil
 			}
 
-			language := new(models.Language).GetLanguageByCode(language_code, lang)
+			language, err := new(models.Language).GetLanguageByCode(language_code, lang)
+			if err != nil {
+				return nil, err
+			}
+
 			if language.ID.Hex() == "000000000000000000000000" {
 				return nil, nil
 			}
@@ -90,7 +94,11 @@ func init() {
 				return nil, nil
 			}
 
-			country := new(models.Country).GetCountryByCode(country_code, lang)
+			country, err := new(models.Country).GetCountryByCode(country_code, lang)
+			if err != nil {
+				return nil, err
+			}
+
 			if country.ID.Hex() == "000000000000000000000000" {
 				return nil, nil
 			}
@@ -103,7 +111,11 @@ func init() {
 		Type: graphql.NewList(Song),
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			id := p.Source.(models.Songbook).ID.Hex()
-			songs := new(models.Songbook).GetSongs(id)
+			songs, err := new(models.Songbook).GetSongs(id)
+			if err != nil {
+				return nil, err
+			}
+
 			return songs, nil
 		},
 	})
@@ -113,7 +125,10 @@ func init() {
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			id := p.Source.(models.Songbook).ID.Hex()
 			lang := p.Context.Value("language").(string)
-			songbook := new(models.Songbook).GetSongbookByID(id, lang)
+			songbook, err := new(models.Songbook).GetSongbookByID(id, lang)
+			if err != nil {
+				return nil, err
+			}
 
 			return songbook.Categories, nil
 		},

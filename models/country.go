@@ -16,7 +16,7 @@ type Country struct {
 	Code       string             `json:"code" bson:"code"`
 }
 
-func (n *Country) GetAllCountries(reader_code string) []Country {
+func (n *Country) GetAllCountries(reader_code string) ([]Country, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -30,7 +30,7 @@ func (n *Country) GetAllCountries(reader_code string) []Country {
 	})
 
 	if err != nil {
-		panic(err)
+		return []Country{}, err
 	}
 
 	var countries []Country
@@ -40,10 +40,10 @@ func (n *Country) GetAllCountries(reader_code string) []Country {
 		panic(err)
 	}
 
-	return countries
+	return countries, nil
 }
 
-func (n *Country) GetCountryByCode(code string, reader_code string) Country {
+func (n *Country) GetCountryByCode(code string, reader_code string) (Country, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -59,12 +59,11 @@ func (n *Country) GetCountryByCode(code string, reader_code string) Country {
 
 	result := Country{}
 
-	err := cursor.Decode(&result)
-
-	if err != nil {
-		panic(err)
+	if cursor.Err() != nil {
+		return Country{}, cursor.Err()
 	}
+	cursor.Decode(&result)
 
-	return result
+	return result, nil
 
 }

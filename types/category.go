@@ -66,7 +66,11 @@ func init() {
 		Type: graphql.NewList(Category),
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			id := p.Source.(models.Category).ID
-			category := new(models.Category).GetCategoryById(id.Hex())
+			category, err := new(models.Category).GetCategoryById(id.Hex())
+			if err != nil {
+				return nil, err
+			}
+
 			return category.Children, nil
 		},
 	})

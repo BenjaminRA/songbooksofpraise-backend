@@ -16,7 +16,7 @@ type Language struct {
 	Code       string             `json:"code" bson:"code"`
 }
 
-func (n *Language) GetAllLanguages(reader_code string) []Language {
+func (n *Language) GetAllLanguages(reader_code string) ([]Language, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -29,7 +29,7 @@ func (n *Language) GetAllLanguages(reader_code string) []Language {
 		"reader_code": reader_code,
 	})
 	if err != nil {
-		panic(err)
+		return []Language{}, err
 	}
 
 	result := []Language{}
@@ -42,10 +42,10 @@ func (n *Language) GetAllLanguages(reader_code string) []Language {
 		result = append(result, elem)
 	}
 
-	return result
+	return result, nil
 }
 
-func (n *Language) GetLanguageByCode(code string, reader_code string) Language {
+func (n *Language) GetLanguageByCode(code string, reader_code string) (Language, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -61,13 +61,13 @@ func (n *Language) GetLanguageByCode(code string, reader_code string) Language {
 
 	result := Language{}
 
-	err := cursor.Decode(&result)
-
-	if err != nil {
-		panic(err)
+	if cursor.Err() != nil {
+		return Language{}, cursor.Err()
 	}
 
-	return result
+	cursor.Decode(&result)
+
+	return result, nil
 }
 
 func (n *Language) CreateLanguage(reader_code string) (Language, error) {
@@ -78,7 +78,7 @@ func (n *Language) CreateLanguage(reader_code string) (Language, error) {
 		return Language{}, err
 	}
 
-	return new(Language).GetLanguageByCode(n.Code, reader_code), nil
+	return new(Language).GetLanguageByCode(n.Code, reader_code)
 }
 
 func (n *Language) UpdateLanguage(code string) error {

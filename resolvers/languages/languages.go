@@ -8,7 +8,10 @@ import (
 
 func GetLanguages(p graphql.ResolveParams) (interface{}, error) {
 	reader_code := p.Context.Value("language").(string)
-	languages := new(models.Language).GetAllLanguages(reader_code)
+	languages, err := new(models.Language).GetAllLanguages(reader_code)
+	if err != nil {
+		return nil, err
+	}
 
 	return languages, nil
 }
@@ -33,14 +36,14 @@ func CreateLanguage(p graphql.ResolveParams) (interface{}, error) {
 // 	var language models.Language
 
 // 	if err := c.BindJSON(&language); err != nil {
-// 		c.IndentedJSON(http.StatusBadRequest, err.Error())
+// 		c.JSON(http.StatusBadRequest, err.Error())
 // 		return
 // 	}
 
 // 	if err := language.UpdateLanguage(code); err != nil {
-// 		c.IndentedJSON(http.StatusBadRequest, err.Error())
+// 		c.JSON(http.StatusBadRequest, err.Error())
 // 		return
 // 	}
 
-// 	c.IndentedJSON(http.StatusCreated, language)
+// 	c.JSON(http.StatusCreated, language)
 // }

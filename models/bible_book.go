@@ -17,7 +17,7 @@ type BibleBook struct {
 	Testament     string             `json:"testament" bson:"testament"`
 }
 
-func (n *BibleBook) GetAllBibleBooks(reader_code string) []BibleBook {
+func (n *BibleBook) GetAllBibleBooks(reader_code string) ([]BibleBook, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -30,7 +30,7 @@ func (n *BibleBook) GetAllBibleBooks(reader_code string) []BibleBook {
 		"language_code": reader_code,
 	})
 	if err != nil {
-		panic(err)
+		return []BibleBook{}, err
 	}
 
 	result := []BibleBook{}
@@ -43,10 +43,10 @@ func (n *BibleBook) GetAllBibleBooks(reader_code string) []BibleBook {
 		result = append(result, elem)
 	}
 
-	return result
+	return result, nil
 }
 
-func (n *BibleBook) GetBibleBookByCode(reader_code string, code string) BibleBook {
+func (n *BibleBook) GetBibleBookByCode(reader_code string, code string) (BibleBook, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	if reader_code == "" {
@@ -55,25 +55,17 @@ func (n *BibleBook) GetBibleBookByCode(reader_code string, code string) BibleBoo
 
 	reader_code = strings.ToUpper(reader_code)
 
-	cursor, err := db.Collection("BibleBooks").Find(context.TODO(), bson.M{
+	cursor := db.Collection("BibleBooks").FindOne(context.TODO(), bson.M{
 		"language_code": reader_code,
 		"code":          code,
 	})
-	if err != nil {
-		panic(err)
+
+	result := BibleBook{}
+	if cursor.Err() != nil {
+		return result, cursor.Err()
 	}
 
-	result := []BibleBook{}
+	cursor.Decode(&result)
 
-	for cursor.Next(context.TODO()) {
-		elem := BibleBook{}
-		cursor.Decode(&elem)
-		result = append(result, elem)
-	}
-
-	if len(result) == 0 {
-		return BibleBook{}
-	}
-
-	return result[0]
+	return result, nil
 }

@@ -7,7 +7,10 @@ import (
 
 func GetCountries(p graphql.ResolveParams) (interface{}, error) {
 	reader_code := p.Context.Value("language").(string)
-	countries := new(models.Country).GetAllCountries(reader_code)
+	countries, err := new(models.Country).GetAllCountries(reader_code)
+	if err != nil {
+		return nil, err
+	}
 
 	return countries, nil
 }
@@ -18,14 +21,14 @@ func GetCountries(p graphql.ResolveParams) (interface{}, error) {
 // 	var language models.Language
 
 // 	if err := c.BindJSON(&language); err != nil {
-// 		c.IndentedJSON(http.StatusBadRequest, err.Error())
+// 		c.JSON(http.StatusBadRequest, err.Error())
 // 		return
 // 	}
 
 // 	if err := language.UpdateLanguage(code); err != nil {
-// 		c.IndentedJSON(http.StatusBadRequest, err.Error())
+// 		c.JSON(http.StatusBadRequest, err.Error())
 // 		return
 // 	}
 
-// 	c.IndentedJSON(http.StatusCreated, language)
+// 	c.JSON(http.StatusCreated, language)
 // }

@@ -24,7 +24,7 @@ type Songbook struct {
 	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
-func (n *Songbook) GetAllSongbooks(lang string) []Songbook {
+func (n *Songbook) GetAllSongbooks(lang string) ([]Songbook, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	cursor, err := db.Collection("Songbooks").Aggregate(context.TODO(), []bson.M{
@@ -64,7 +64,7 @@ func (n *Songbook) GetAllSongbooks(lang string) []Songbook {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return []Songbook{}, err
 	}
 
 	result := []Songbook{}
@@ -75,14 +75,14 @@ func (n *Songbook) GetAllSongbooks(lang string) []Songbook {
 		result = append(result, elem)
 	}
 
-	return result
+	return result, nil
 }
 
-func (n *Songbook) GetSongs(id string) []Song {
+func (n *Songbook) GetSongs(id string) ([]Song, error) {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		panic(err)
+		return []Song{}, err
 	}
 
 	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
@@ -91,7 +91,7 @@ func (n *Songbook) GetSongs(id string) []Song {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return []Song{}, err
 	}
 
 	result := []Song{}
@@ -102,10 +102,10 @@ func (n *Songbook) GetSongs(id string) []Song {
 		result = append(result, elem)
 	}
 
-	return result
+	return result, nil
 }
 
-func (n *Songbook) GetSongbookByID(id string, lang string) Songbook {
+func (n *Songbook) GetSongbookByID(id string, lang string) (Songbook, error) {
 	db := mongodb.GetMongoDBConnection()
 	objectID, _ := primitive.ObjectIDFromHex(id)
 
@@ -167,7 +167,7 @@ func (n *Songbook) GetSongbookByID(id string, lang string) Songbook {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return Songbook{}, err
 	}
 
 	result := Songbook{}
@@ -180,7 +180,7 @@ func (n *Songbook) GetSongbookByID(id string, lang string) Songbook {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func (n *Songbook) GetCategories() {
@@ -200,7 +200,7 @@ func (n *Songbook) GetCategories() {
 	wg.Wait()
 }
 
-func (n *Songbook) CreateSongbook(lang string) (Songbook, error) {
+func (n *Songbook) CreateSongbook(lang string) error {
 	db := mongodb.GetMongoDBConnection()
 
 	n.ID = primitive.NewObjectID()
@@ -209,7 +209,7 @@ func (n *Songbook) CreateSongbook(lang string) (Songbook, error) {
 
 	_, err := db.Collection("Songbooks").InsertOne(context.TODO(), n)
 	if err != nil {
-		return Songbook{}, err
+		return err
 	}
 
 	Category := Category{
@@ -221,27 +221,34 @@ func (n *Songbook) CreateSongbook(lang string) (Songbook, error) {
 
 	Category.CreateCategory()
 
-	return new(Songbook).GetSongbookByID(n.ID.Hex(), lang), nil
+	return nil
 }
 
 func (n *Songbook) DeleteSongbook() error {
 	db := mongodb.GetMongoDBConnection()
 
 	// Deleting all Songs
-	songs := new(Song).GetAllSongs(map[string]interface{}{
+	songs, err := new(Song).GetAllSongs(map[string]interface{}{
 		"songbook_id": n.ID,
 	})
+	if err != nil {
+		return err
+	}
+
 	for _, song := range songs {
 		song.DeleteSong()
 	}
 
 	// Deleting all Categories
-	categories := new(Songbook).GetSongbookByID(n.ID.Hex(), "")
+	categories, err := new(Songbook).GetSongbookByID(n.ID.Hex(), "")
+	if err != nil {
+		return err
+	}
 	for _, category := range categories.Categories {
 		category.DeleteCategory()
 	}
 
-	_, err := db.Collection("Songbooks").DeleteOne(context.TODO(), bson.M{
+	_, err = db.Collection("Songbooks").DeleteOne(context.TODO(), bson.M{
 		"_id": n.ID,
 	})
 	if err != nil {

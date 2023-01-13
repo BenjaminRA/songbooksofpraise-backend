@@ -7,25 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// func GetSongs(c *gin.Context) {
-// 	songs := new(models.Song).GetAllSongs()
-
-// 	c.IndentedJSON(http.StatusOK, songs)
-// }
-
-// func GetSongsById(c *gin.Context) {
-// 	id := c.Param("id")
-
-// 	song := new(models.Song).GetSongByID(id)
-
-// 	if song.ID.Hex() == "000000000000000000000000" {
-// 		c.IndentedJSON(http.StatusNotFound, song)
-// 	} else {
-// 		c.IndentedJSON(http.StatusOK, song)
-// 	}
-
-// }
-
 func GetMusicSheet(c *gin.Context) {
 	id := c.Param("id")
 	data, filename, err := new(models.Song).GetMusicSheet(id)

@@ -37,7 +37,10 @@ func GetSongs(p graphql.ResolveParams) (interface{}, error) {
 		args["categories_id"] = category_id
 	}
 
-	songs := new(models.Song).GetAllSongs(args)
+	songs, err := new(models.Song).GetAllSongs(args)
+	if err != nil {
+		return nil, err
+	}
 
 	return songs, nil
 }
@@ -48,7 +51,11 @@ func GetSongById(p graphql.ResolveParams) (interface{}, error) {
 		return nil, nil
 	}
 
-	song := new(models.Song).GetSongByID(id)
+	song, err := new(models.Song).GetSongByID(id)
+	if err != nil {
+		return nil, err
+	}
+
 	if song.ID.Hex() == "000000000000000000000000" {
 		return nil, nil
 	}
@@ -57,7 +64,11 @@ func GetSongById(p graphql.ResolveParams) (interface{}, error) {
 }
 
 func validateNumber(song models.Song, songbook_id string) bool {
-	songbook := new(models.Songbook).GetSongbookByID(songbook_id, "EN")
+	songbook, err := new(models.Songbook).GetSongbookByID(songbook_id, "EN")
+	if err != nil {
+		panic(err)
+	}
+
 	if !songbook.Numeration {
 		return true
 	}
@@ -94,7 +105,10 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 	lang := p.Context.Value("language").(string)
 	new_song := p.Args["song"].(map[string]interface{})
 
-	song := new(models.Song).GetSongByID(id)
+	song, err := new(models.Song).GetSongByID(id)
+	if err != nil {
+		return nil, err
+	}
 
 	if song.ID.Hex() == "000000000000000000000000" {
 		return nil, fmt.Errorf("song not found")
@@ -205,7 +219,10 @@ func CreateSong(p graphql.ResolveParams) (interface{}, error) {
 func DeleteSong(p graphql.ResolveParams) (interface{}, error) {
 	id := p.Args["_id"].(string)
 
-	song := new(models.Song).GetSongByID(id)
+	song, err := new(models.Song).GetSongByID(id)
+	if err != nil {
+		return nil, err
+	}
 
 	if song.ID.Hex() == "000000000000000000000000" {
 		return nil, fmt.Errorf("song not found")

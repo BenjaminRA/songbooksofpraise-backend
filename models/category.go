@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
@@ -20,14 +21,14 @@ type Category struct {
 	Songs      []Song               `json:"songs,omitempty" bson:"songs,omitempty"`
 }
 
-func (n *Category) GetAllCategories() []Category {
+func (n *Category) GetAllCategories() ([]Category, error) {
 	db := mongodb.GetMongoDBConnection()
 
 	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
 		{"$match": bson.M{"parent_id": primitive.Null{}}},
 	})
 	if err != nil {
-		panic(err)
+		return []Category{}, err
 	}
 
 	result := []Category{}
@@ -46,14 +47,14 @@ func (n *Category) GetAllCategories() []Category {
 	}
 	wg.Wait()
 
-	return result
+	return result, nil
 }
 
-func (n *Category) GetCategoryById(id string) Category {
+func (n *Category) GetCategoryById(id string) (Category, error) {
 	db := mongodb.GetMongoDBConnection()
 	object_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		panic(err)
+		return Category{}, err
 	}
 
 	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
@@ -73,7 +74,7 @@ func (n *Category) GetCategoryById(id string) Category {
 		}},
 	})
 	if err != nil {
-		panic(err)
+		return Category{}, err
 	}
 
 	result := []Category{}
@@ -90,10 +91,10 @@ func (n *Category) GetCategoryById(id string) Category {
 	}
 
 	if len(result) == 0 {
-		return Category{}
+		return Category{}, fmt.Errorf("Category not found")
 	}
 
-	return result[0]
+	return result[0], nil
 }
 
 func (n *Category) GetChildren() []Category {
@@ -130,16 +131,16 @@ func (n *Category) GetChildren() []Category {
 	return result
 }
 
-func (n *Category) CreateCategory() (Category, error) {
+func (n *Category) CreateCategory() error {
 	db := mongodb.GetMongoDBConnection()
 	n.ID = primitive.NewObjectID()
 
 	_, err := db.Collection("Categories").InsertOne(context.TODO(), n)
 	if err != nil {
-		return Category{}, err
+		return err
 	}
 
-	return new(Category).GetCategoryById(n.ID.Hex()), nil
+	return nil
 }
 
 func (n *Category) UpdateCategory() error {

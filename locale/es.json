@@ -1,3 +1,5 @@
 {
-  "song.error.invalid_number": "El número %s ya está en uso"
+  "song.error.invalid_number": "El número %s ya está en uso",
+  "register.invalid.email": "Este correo electrónico está en uso",
+  "login.invalid.credentials": "Credenciales incorrectas"
 }

@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,10 +25,6 @@ func GetMongoDBConnection() *mongo.Database {
 	}
 
 	var err error
-	err = godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
 
 	credential := options.Credential{
 		Username: os.Getenv("DB_USERNAME"),

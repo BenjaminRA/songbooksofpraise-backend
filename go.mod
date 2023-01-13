@@ -15,6 +15,7 @@ require (
 	github.com/cosmtrek/air v1.40.4 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/creack/pty v1.1.18 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gin-contrib/cors v1.3.1 // indirect

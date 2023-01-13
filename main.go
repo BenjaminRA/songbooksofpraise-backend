@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	auth_handler "github.com/BenjaminRA/himnario-backend/handlers/auth"
 	files_handler "github.com/BenjaminRA/himnario-backend/handlers/files"
 	song_handler "github.com/BenjaminRA/himnario-backend/handlers/songs"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
@@ -14,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -25,6 +27,30 @@ func main() {
 		fmt.Println("Migrating database")
 		migration.Migrate()
 	}
+
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
+	// err = smtp.SendMail(
+	// 	fmt.Sprintf("%s:smtp", os.Getenv("MAIL_HOST")),
+	// 	smtp.PlainAuth(
+	// 		os.Getenv("MAIL_IDENTITY"),
+	// 		os.Getenv("MAIL_USERNAME"),
+	// 		os.Getenv("MAIL_PASSWORD"),
+	// 		os.Getenv("MAIL_HOST"),
+	// 	),
+	// 	"Songbooks Of Praise",
+	// 	[]string{"success@simulator.amazonses.com"},
+	// 	[]byte("Mensaje"),
+	// )
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// os.Exit(0)
 
 	schemaConfig := graphql.SchemaConfig{
 		Query:    graphql.NewObject(schema.Query),
@@ -38,9 +64,9 @@ func main() {
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
-		AllowHeaders:     []string{"*"},
+		AllowHeaders:     []string{"Content-Type", "Accept-Language"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -82,22 +108,8 @@ func main() {
 	router.GET("/songs/:id/voices/:voice", song_handler.GetVoicesByVoice)
 	router.POST("/files", files_handler.PostFile)
 
-	// router.GET("/songbooks", route_songbooks.GetSongbooks)
-	// router.POST("/songbooks", route_songbooks.PostSongbook)
-	// router.GET("/songbooks/:id", route_songbooks.GetSongbooksById)
-	// router.PUT("/songbooks/:id", route_songbooks.UpdateSongbook)
-	// router.DELETE("/songbooks/:id", route_songbooks.DeleteSongbook)
-
-	// router.GET("/categories", route_categories.GetCategories)
-	// router.POST("/categories", route_categories.PostCategory)
-	// router.GET("/categories/:id", route_categories.GetCategoriesById)
-	// router.PUT("/categories/:id", route_categories.UpdateCategory)
-	// router.DELETE("/categories/:id", route_categories.DeleteCategory)
-
-	// router.GET("/languages", route_languages.GetLanguages)
-	// router.PUT("/languages/:code", route_languages.UpdateLanguage)
-
-	// router.GET("/countries", route_countries.GetCountries)
+	router.POST("/login", auth_handler.Login)
+	router.POST("/register", auth_handler.Register)
 
 	router.Run("localhost:8080")
 }

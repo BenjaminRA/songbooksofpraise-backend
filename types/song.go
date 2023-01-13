@@ -70,7 +70,11 @@ var Song = graphql.NewObject(
 							tmp := strings.Replace(match, "{", "", 1)
 							tmp = strings.Replace(tmp, "}", "", 1)
 
-							bibleVerseObject := new(models.BibleBook).GetBibleBookByCode(language_code, tmp)
+							bibleVerseObject, err := new(models.BibleBook).GetBibleBookByCode(language_code, tmp)
+							if err != nil {
+								panic(err)
+							}
+
 							fmt.Println(bibleVerseObject)
 
 							return bibleVerseObject.Book
@@ -169,7 +173,10 @@ func init() {
 				return nil, nil
 			}
 
-			songbook := new(models.Songbook).GetSongbookByID(songbook_id, lang)
+			songbook, err := new(models.Songbook).GetSongbookByID(songbook_id, lang)
+			if err != nil {
+				return nil, err
+			}
 
 			if songbook.ID.Hex() == "000000000000000000000000" {
 				return nil, nil

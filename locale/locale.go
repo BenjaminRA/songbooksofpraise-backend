@@ -21,8 +21,14 @@ func GetLocalizedMessage(lang string, message_id string) string {
 		localizer = *i18n.NewLocalizer(&bundle, lang)
 	}
 
-	return localizer.MustLocalize(&i18n.LocalizeConfig{
+	res, err := localizer.Localize(&i18n.LocalizeConfig{
 		MessageID: message_id,
 	})
+
+	if err != nil {
+		return message_id
+	}
+
+	return res
 
 }
