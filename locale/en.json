@@ -1,5 +1,11 @@
 {
   "song.error.invalid_number": "The number %s is taken",
   "register.invalid.email": "This email is already in use",
-  "login.invalid.credentials": "Invalid credentials"
+  "login.invalid.credentials": "Invalid credentials",
+  "session_token.missing": "Missing session token",
+  "session_token.invalid": "Invalid session token",
+  "session_token.expired": "Expired session token",
+  "refresh_token.missing": "Missing refresh token",
+  "refresh_token.invalid": "Invalid refresh token",
+  "refresh_token.expired": "Expired refresh token"
 }

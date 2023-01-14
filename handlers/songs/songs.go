@@ -11,7 +11,7 @@ func GetMusicSheet(c *gin.Context) {
 	id := c.Param("id")
 	data, filename, err := new(models.Song).GetMusicSheet(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, err)
+		c.AbortWithStatusJSON(http.StatusNotFound, err)
 		return
 	}
 
@@ -23,7 +23,7 @@ func GetMusic(c *gin.Context) {
 	id := c.Param("id")
 	data, filename, err := new(models.Song).GetMusic(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, err)
+		c.AbortWithStatusJSON(http.StatusNotFound, err)
 		return
 	}
 
@@ -35,7 +35,7 @@ func GetMusicOnly(c *gin.Context) {
 	id := c.Param("id")
 	data, filename, err := new(models.Song).GetMusicOnly(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, err)
+		c.AbortWithStatusJSON(http.StatusNotFound, err)
 		return
 	}
 
@@ -48,7 +48,7 @@ func GetVoicesByVoice(c *gin.Context) {
 	voice := c.Param("voice")
 	data, filename, err := new(models.Song).GetVoice(id, voice)
 	if err != nil {
-		c.JSON(http.StatusNotFound, err)
+		c.AbortWithStatusJSON(http.StatusNotFound, err)
 		return
 	}
 

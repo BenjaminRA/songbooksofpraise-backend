@@ -1,9 +1,9 @@
-package handlers
+package auth
 
 import (
-	"fmt"
 	"net/http"
 
+	auth "github.com/BenjaminRA/himnario-backend/auth"
 	"github.com/BenjaminRA/himnario-backend/helpers"
 	"github.com/BenjaminRA/himnario-backend/locale"
 	"github.com/BenjaminRA/himnario-backend/models"
@@ -14,28 +14,39 @@ func Register(c *gin.Context) {
 	lang := c.Request.Context().Value("language").(string)
 	var user models.User
 
-	var body map[string]interface{}
+	var body gin.H
 	c.BindJSON(&body)
 
 	if err := helpers.BindJSON(body, &user); err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
 		return
 	}
 
 	if err := user.Register(); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]interface{}{
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": locale.GetLocalizedMessage(lang, err.Error()),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	token, err := auth.CreateToken(user.ID.Hex())
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	token.SendToken(c)
+
+	user.Password = ""
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
 }
 
 func Login(c *gin.Context) {
 	lang := c.Request.Context().Value("language").(string)
-
-	fmt.Println(c.Request.Cookie("SessionToken"))
 
 	var request map[string]string
 	c.BindJSON(&request)
@@ -45,12 +56,43 @@ func Login(c *gin.Context) {
 
 	user, err := new(models.User).Login(email, password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, map[string]interface{}{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 			"error": locale.GetLocalizedMessage(lang, "login.invalid.credentials"),
 		})
 		return
 	}
 
-	c.Header("Set-Cookie", "SessionToken=asdasasda; SameSite=Strict; Secure; HttpOnly")
-	c.JSON(http.StatusOK, user)
+	token, err := auth.CreateToken(user.ID.Hex())
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	token.SendToken(c)
+	user.Password = ""
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
+}
+
+func GetUser(c *gin.Context) {
+	user, err := auth.RetrieveUser(c)
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
+}
+
+func Logout(c *gin.Context) {
+	auth.UnsetToken(c)
+	c.Status(http.StatusOK)
 }

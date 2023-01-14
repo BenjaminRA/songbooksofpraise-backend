@@ -12,7 +12,7 @@ import (
 func PostFile(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
 	}
 	filenameArray := strings.Split(file.Filename, ".")
 	secret := helpers.GetSecretString()
@@ -20,7 +20,7 @@ func PostFile(c *gin.Context) {
 	path := fmt.Sprintf("tmp/%s.%s", secret, filenameArray[len(filenameArray)-1])
 
 	c.SaveUploadedFile(file, path)
-	c.JSON(http.StatusOK, map[string]string{
+	c.JSON(http.StatusOK, gin.H{
 		"path": path,
 	})
 }

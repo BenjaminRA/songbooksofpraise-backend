@@ -84,6 +84,7 @@ func main() {
 
 	// Sets the language variable to retrieve the information accordingly
 	router.Use(middlewares.LanguageParser())
+	router.Use(middlewares.CheckAuthentication())
 
 	router.POST("/graphql", graphqlHandler())
 
@@ -100,8 +101,6 @@ func main() {
 	// }
 	// router.GET("/graphql", playgroundHandler())
 
-	// router.GET("/songs", route_songs.GetSongs)
-	// router.GET("/songs/:id", route_songs.GetSongsById)
 	router.GET("/songs/:id/music", song_handler.GetMusic)
 	router.GET("/songs/:id/music_only", song_handler.GetMusicOnly)
 	router.GET("/songs/:id/music_sheet", song_handler.GetMusicSheet)
@@ -110,6 +109,8 @@ func main() {
 
 	router.POST("/login", auth_handler.Login)
 	router.POST("/register", auth_handler.Register)
+	router.POST("/logout", auth_handler.Logout)
+	router.POST("/auth/user", auth_handler.GetUser)
 
 	router.Run("localhost:8080")
 }

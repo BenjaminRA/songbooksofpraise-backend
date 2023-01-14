@@ -15,7 +15,7 @@ type User struct {
 	FirstName    string             `json:"first_name" bson:"first_name"`
 	LastName     string             `json:"last_name" bson:"last_name"`
 	Email        string             `json:"email" bson:"email"`
-	Password     string             `json:"password" bson:"password"`
+	Password     string             `json:"password,omitempty" bson:"password,omitempty"`
 	Token        string             `json:"token,omitempty" bson:"token,omitempty"`
 	RefreshToken string             `json:"refresh_token,omitempty" bson:"refresh_token,omitempty"`
 	ForgetToken  string             `json:"forget_token,omitempty" bson:"forget_token,omitempty"`
@@ -32,7 +32,25 @@ func CheckEmailTaken(email string) bool {
 	return match.Err() == nil
 }
 
-func (n *User) GetAllUsers(c context.Context) ([]User, error) {
+func (n *User) GetUserById(user_id string) (User, error) {
+	db := mongodb.GetMongoDBConnection()
+	objectID, _ := primitive.ObjectIDFromHex(user_id)
+
+	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
+		"_id": objectID,
+	})
+
+	if match.Err() != nil {
+		return User{}, match.Err()
+	}
+
+	var user User
+	match.Decode(&user)
+
+	return user, nil
+}
+
+func (n *User) GetAllUsers() ([]User, error) {
 	db := mongodb.GetMongoDBConnection()
 	cursor, err := db.Collection("Users").Find(context.TODO(), bson.M{})
 	if err != nil {
@@ -48,7 +66,6 @@ func (n *User) GetAllUsers(c context.Context) ([]User, error) {
 	}
 
 	return result, nil
-
 }
 
 func (n *User) Register() error {

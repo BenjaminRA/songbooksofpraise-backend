@@ -1,5 +1,11 @@
 {
   "song.error.invalid_number": "El número %s ya está en uso",
   "register.invalid.email": "Este correo electrónico está en uso",
-  "login.invalid.credentials": "Credenciales incorrectas"
+  "login.invalid.credentials": "Credenciales incorrectas",
+  "session_token.missing": "No se ha encontrado el Token de Sesión",
+  "session_token.invalid": "Token de Sesión inválido",
+  "session_token.expired": "Token de Sesión ha expirado",
+  "refresh_token.missing": "No se ha encontrado el Token de refresco",
+  "refresh_token.invalid": "Token de refresco inválido",
+  "refresh_token.expired": "Token de refresco ha expirado"
 }

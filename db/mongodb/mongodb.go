@@ -20,32 +20,30 @@ import (
 var mongodb *mongo.Client
 
 func GetMongoDBConnection() *mongo.Database {
-	if mongodb != nil {
-		return mongodb.Database("himnario")
-	}
+	if mongodb == nil {
+		var err error
 
-	var err error
+		credential := options.Credential{
+			Username: os.Getenv("DB_USERNAME"),
+			Password: os.Getenv("DB_PASSWORD"),
+		}
 
-	credential := options.Credential{
-		Username: os.Getenv("DB_USERNAME"),
-		Password: os.Getenv("DB_PASSWORD"),
-	}
+		mongodb, err = mongo.Connect(
+			context.TODO(),
+			options.Client().ApplyURI(
+				fmt.Sprintf("mongodb://%s:%s/?readPreference=primary&appname=songbooks_of_praise_backend&directConnection=true&ssl=false",
+					os.Getenv("DB_HOST"),
+					os.Getenv("DB_PORT"),
+				),
+			).SetAuth(credential),
+		)
+		if err != nil {
+			panic(err)
+		}
 
-	mongodb, err = mongo.Connect(
-		context.TODO(),
-		options.Client().ApplyURI(
-			fmt.Sprintf("mongodb://%s:%s/?readPreference=primary&appname=songbooks_of_praise_backend&directConnection=true&ssl=false",
-				os.Getenv("DB_HOST"),
-				os.Getenv("DB_PORT"),
-			),
-		).SetAuth(credential),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := mongodb.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
+		if err := mongodb.Ping(context.TODO(), readpref.Primary()); err != nil {
+			panic(err)
+		}
 	}
 
 	return mongodb.Database("himnario")
