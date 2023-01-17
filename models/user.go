@@ -11,22 +11,30 @@ import (
 )
 
 type User struct {
-	ID           primitive.ObjectID `json:"_id" bson:"_id"`
-	FirstName    string             `json:"first_name" bson:"first_name"`
-	LastName     string             `json:"last_name" bson:"last_name"`
-	Email        string             `json:"email" bson:"email"`
-	Password     string             `json:"password,omitempty" bson:"password,omitempty"`
-	Token        string             `json:"token,omitempty" bson:"token,omitempty"`
-	RefreshToken string             `json:"refresh_token,omitempty" bson:"refresh_token,omitempty"`
-	ForgetToken  string             `json:"forget_token,omitempty" bson:"forget_token,omitempty"`
-	Verified     bool               `json:"verified,omitempty" bson:"verified,omitempty"`
-	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
+	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	FirstName string             `json:"first_name" bson:"first_name"`
+	LastName  string             `json:"last_name" bson:"last_name"`
+	Email     string             `json:"email" bson:"email"`
+	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
+	Admin     bool               `json:"admin" bson:"admin"`
+	Editor    bool               `json:"editor" bson:"editor"`
+	Moderator bool               `json:"moderator" bson:"moderator"`
+	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
 func CheckEmailTaken(email string) bool {
 	db := mongodb.GetMongoDBConnection()
 	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
+		"email": email,
+	})
+	return match.Err() == nil
+}
+
+func CheckEmailTakenWithId(email string, user_id primitive.ObjectID) bool {
+	db := mongodb.GetMongoDBConnection()
+	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
+		"_id":   bson.M{"$ne": user_id},
 		"email": email,
 	})
 	return match.Err() == nil
@@ -76,6 +84,9 @@ func (n *User) Register() error {
 	db := mongodb.GetMongoDBConnection()
 
 	n.ID = primitive.NewObjectID()
+	n.Admin = false
+	n.Editor = true
+	n.Moderator = false
 	n.CreatedAt = time.Now()
 	n.UpdatedAt = time.Now()
 
@@ -102,4 +113,42 @@ func (n *User) Login(email string, password string) (User, error) {
 	match.Decode(&user)
 
 	return user, nil
+}
+
+func (n *User) UpdateUser() error {
+	if CheckEmailTakenWithId(n.Email, n.ID) {
+		return fmt.Errorf("register.invalid.email")
+	}
+
+	db := mongodb.GetMongoDBConnection()
+	_, err := db.Collection("Users").UpdateOne(context.TODO(), bson.M{
+		"email": n.Email,
+	}, bson.M{
+		"$set": bson.M{
+			"first_name": n.FirstName,
+			"last_name":  n.LastName,
+			"email":      n.Email,
+			"admin":      n.Admin,
+			"moderator":  n.Moderator,
+			"editor":     n.Editor,
+			"updated_at": time.Now(),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *User) DeleteUser() error {
+	db := mongodb.GetMongoDBConnection()
+	_, err := db.Collection("Users").DeleteOne(context.TODO(), bson.M{
+		"email": n.Email,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -103,7 +103,38 @@ func Migrate() {
 
 	db := mongodb.GetMongoDBConnection()
 
+	fmt.Println("Creating bible books")
 	addBibleBooks(db)
+
+	if os.Getenv("ADMIN_FIRST_NAME") == "" ||
+		os.Getenv("ADMIN_LAST_NAME") == "" ||
+		os.Getenv("ADMIN_EMAIL") == "" ||
+		os.Getenv("ADMIN_PASSWORD") == "" {
+		panic("Please set admin environment variables")
+	}
+
+	// Add admin user
+	fmt.Println("Creating admin user")
+	var admin_user_id = primitive.NewObjectID()
+	db.Collection("Users").InsertOne(context.TODO(), bson.M{
+		"_id":        admin_user_id,
+		"first_name": os.Getenv("ADMIN_FIRST_NAME"),
+		"last_name":  os.Getenv("ADMIN_LAST_NAME"),
+		"email":      os.Getenv("ADMIN_EMAIL"),
+		"password":   os.Getenv("ADMIN_PASSWORD"),
+		"admin":      true,
+		"moderator":  true,
+		"editor":     true,
+		"created_at": time.Now(),
+		"updated_at": time.Now(),
+	})
+
+	fmt.Println("Creating countries and languages")
+	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
+		"code":        "ES",
+		"reader_code": "ES",
+		"language":    "Español",
+	})
 
 	db.Collection("Languages").InsertOne(context.TODO(), bson.M{
 		"code":        "ES",
@@ -141,6 +172,7 @@ func Migrate() {
 		"country":     "Chile",
 	})
 
+	fmt.Println("Creating \"Himnos y cánticos del Evangelio\" songbook")
 	songbook := models.Songbook{
 		ID:           primitive.NewObjectID(),
 		Title:        "Himnos y Cánticos del Evangelio",
@@ -148,6 +180,8 @@ func Migrate() {
 		Description:  "...",
 		CountryCode:  "CL",
 		Numeration:   true,
+		EditorsID:    []primitive.ObjectID{admin_user_id},
+		OwnersID:     []primitive.ObjectID{admin_user_id},
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -235,6 +269,7 @@ func Migrate() {
 
 	db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
 
+	fmt.Println("Creating \"Coros\" songbook")
 	songbook = models.Songbook{
 		ID:           primitive.NewObjectID(),
 		Title:        "Coros",
@@ -242,6 +277,8 @@ func Migrate() {
 		LanguageCode: "ES",
 		Description:  "...",
 		CountryCode:  "CL",
+		EditorsID:    []primitive.ObjectID{admin_user_id},
+		OwnersID:     []primitive.ObjectID{admin_user_id},
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}

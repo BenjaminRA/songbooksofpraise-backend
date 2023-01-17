@@ -22,6 +22,14 @@ func CheckAuthentication() gin.HandlerFunc {
 			return
 		}
 
+		// user, err := auth.RetrieveUser(c)
+		// if err != nil {
+		// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		// 		"error": locale.GetLocalizedMessage(c.Request.Context().Value("language").(string), err.Error()),
+		// 	})
+		// }
+		// c.Request = c.Request.Clone(context.WithValue(c.Request.Context(), "user", user))
+
 		c.Next()
 	}
 }

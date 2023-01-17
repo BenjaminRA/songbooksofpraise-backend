@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	auth "github.com/BenjaminRA/himnario-backend/auth"
@@ -18,7 +19,7 @@ func Register(c *gin.Context) {
 	c.BindJSON(&body)
 
 	if err := helpers.BindJSON(body, &user); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
 		return
 	}
 
@@ -95,4 +96,61 @@ func GetUser(c *gin.Context) {
 func Logout(c *gin.Context) {
 	auth.UnsetToken(c)
 	c.Status(http.StatusOK)
+}
+
+func GetUsers(c *gin.Context) {
+	users, err := new(models.User).GetAllUsers()
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"users": users,
+	})
+}
+
+func UpdateUser(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+	var user models.User
+	var body gin.H
+	c.BindJSON(&body)
+
+	if err := helpers.BindJSON(body, &user); err != nil {
+		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	if err := user.UpdateUser(); err != nil {
+		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
+}
+
+func DeleteUser(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+	var user models.User
+	var body gin.H
+	c.BindJSON(&body)
+
+	if err := helpers.BindJSON(body, &user); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	if err := user.DeleteUser(); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }

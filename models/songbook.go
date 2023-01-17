@@ -11,17 +11,21 @@ import (
 )
 
 type Songbook struct {
-	ID           primitive.ObjectID `json:"_id" bson:"_id"`
-	Title        string             `json:"title" bson:"title"`
-	Description  string             `json:"description" bson:"description"`
-	Language     Language           `json:"language,omitempty" bson:"language,omitempty"`
-	LanguageCode string             `json:"language_code" bson:"language_code"`
-	Country      Country            `json:"country,omitempty" bson:"country,omitempty"`
-	CountryCode  string             `json:"country_code" bson:"country_code"`
-	Categories   []Category         `json:"categories,omitempty" bson:"categories,omitempty"`
-	Numeration   bool               `json:"numeration" bson:"numeration"`
-	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
+	ID           primitive.ObjectID   `json:"_id" bson:"_id"`
+	Title        string               `json:"title" bson:"title"`
+	Description  string               `json:"description" bson:"description"`
+	Language     Language             `json:"language,omitempty" bson:"language,omitempty"`
+	LanguageCode string               `json:"language_code" bson:"language_code"`
+	Country      Country              `json:"country,omitempty" bson:"country,omitempty"`
+	CountryCode  string               `json:"country_code" bson:"country_code"`
+	Categories   []Category           `json:"categories,omitempty" bson:"categories,omitempty"`
+	Numeration   bool                 `json:"numeration" bson:"numeration"`
+	Owners       []User               `json:"owners" bson:"owners"`
+	OwnersID     []primitive.ObjectID `json:"owners_id" bson:"owners_id"`
+	Editors      []User               `json:"editors" bson:"editors"`
+	EditorsID    []primitive.ObjectID `json:"editors_id" bson:"editors_id"`
+	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
 }
 
 func (n *Songbook) GetAllSongbooks(lang string) ([]Songbook, error) {

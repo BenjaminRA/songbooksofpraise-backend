@@ -12,7 +12,7 @@ import (
 func PostFile(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 	filenameArray := strings.Split(file.Filename, ".")
 	secret := helpers.GetSecretString()

@@ -23,14 +23,14 @@ func main() {
 	flag.BoolVar(&migrate, "m", false, "Migrate database")
 	flag.Parse()
 
-	if migrate {
-		fmt.Println("Migrating database")
-		migration.Migrate()
-	}
-
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
+	}
+
+	if migrate {
+		fmt.Println("Migrating database")
+		migration.Migrate()
 	}
 
 	// err = smtp.SendMail(
@@ -111,6 +111,9 @@ func main() {
 	router.POST("/register", auth_handler.Register)
 	router.POST("/logout", auth_handler.Logout)
 	router.POST("/auth/user", auth_handler.GetUser)
+	router.PUT("/auth/user", auth_handler.UpdateUser)
+	router.DELETE("/auth/user", auth_handler.DeleteUser)
+	router.GET("/auth/users", auth_handler.GetUsers)
 
 	router.Run("localhost:8080")
 }
