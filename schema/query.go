@@ -1,6 +1,7 @@
 package schema
 
 import (
+	resolver_authors "github.com/BenjaminRA/himnario-backend/resolvers/authors"
 	resolver_bible_books "github.com/BenjaminRA/himnario-backend/resolvers/bible_books"
 	resolver_categories "github.com/BenjaminRA/himnario-backend/resolvers/categories"
 	resolver_countries "github.com/BenjaminRA/himnario-backend/resolvers/countries"
@@ -103,6 +104,13 @@ var Query = graphql.ObjectConfig{
 				},
 			},
 			Resolve: resolver_bible_books.GetAllBibleBooks,
+		},
+
+		// Authors
+		"authors": &graphql.Field{
+			Type:        graphql.NewList(types.Author),
+			Description: "Get a list of all authors",
+			Resolve:     resolver_authors.GetAuthors,
 		},
 	},
 }

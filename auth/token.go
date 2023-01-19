@@ -23,24 +23,24 @@ type TokenDetails struct {
 }
 
 func (n *TokenDetails) SendToken(c *gin.Context) {
-	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("SessionToken=%s; SameSite=Strict; Max-Age=%v; Secure; HttpOnly", n.AccessToken, math.Floor(time.Until(time.Unix(n.AtExp, 0)).Seconds())))
-	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("RefreshToken=%s; SameSite=Strict; Max-Age=%v; Secure; HttpOnly", n.RefreshToken, math.Floor(time.Until(time.Unix(n.RtExp, 0)).Seconds())))
+	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("SessionToken=%s; SameSite=none; Max-Age=%v; Path=/; Secure; HttpOnly", n.AccessToken, math.Floor(time.Until(time.Unix(n.AtExp, 0)).Seconds())))
+	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("RefreshToken=%s; SameSite=none; Max-Age=%v; Path=/; Secure; HttpOnly", n.RefreshToken, math.Floor(time.Until(time.Unix(n.RtExp, 0)).Seconds())))
 }
 
 func UnsetToken(c *gin.Context) {
-	c.Writer.Header().Add("Set-Cookie", "SessionToken=; SameSite=Strict; Max-Age=0; Secure; HttpOnly")
-	c.Writer.Header().Add("Set-Cookie", "RefreshToken=; SameSite=Strict; Max-Age=0; Secure; HttpOnly")
+	c.Writer.Header().Add("Set-Cookie", "SessionToken=; SameSite=none; Max-Age=0; Path=/; Secure; HttpOnly")
+	c.Writer.Header().Add("Set-Cookie", "RefreshToken=; SameSite=none; Max-Age=0; Path=/; Secure; HttpOnly")
 }
 
-func CreateToken(user_id string) (TokenDetails, error) {
+func CreateToken(user models.User) (TokenDetails, error) {
 	tokenDetails := TokenDetails{}
 	tokenDetails.AccessUUID = uuid.NewV4().String()
 	tokenDetails.RefreshUUID = uuid.NewV4().String()
 
 	// Creating Access Token
 	tokenClaims := jwt.MapClaims{}
-	tokenClaims["user_id"] = user_id
-	tokenClaims["authorized"] = true
+	tokenClaims["user_id"] = user.ID.Hex()
+	tokenClaims["verified"] = user.Verified
 	tokenClaims["access_uuid"] = tokenDetails.AccessUUID
 	tokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 	tokenDetails.AtExp = tokenClaims["exp"].(int64)
@@ -54,7 +54,8 @@ func CreateToken(user_id string) (TokenDetails, error) {
 
 	// Creating Refresh Token
 	tokenClaims = jwt.MapClaims{}
-	tokenClaims["user_id"] = user_id
+	tokenClaims["user_id"] = user.ID.Hex()
+	tokenClaims["verified"] = user.Verified
 	tokenClaims["refresh_uuid"] = tokenDetails.RefreshUUID
 	tokenClaims["exp"] = time.Now().Add(time.Hour * 48).Unix()
 	tokenDetails.RtExp = tokenClaims["exp"].(int64)
@@ -68,8 +69,8 @@ func CreateToken(user_id string) (TokenDetails, error) {
 
 	// Saving token in redis
 	client := redisdb.GetRedisConnection()
-	client.Set(tokenDetails.AccessUUID, user_id, time.Until(time.Unix(tokenDetails.AtExp, 0)))
-	client.Set(tokenDetails.RefreshUUID, user_id, time.Until(time.Unix(tokenDetails.RtExp, 0)))
+	client.Set(tokenDetails.AccessUUID, user.ID.Hex(), time.Until(time.Unix(tokenDetails.AtExp, 0)))
+	client.Set(tokenDetails.RefreshUUID, user.ID.Hex(), time.Until(time.Unix(tokenDetails.RtExp, 0)))
 
 	return tokenDetails, nil
 }

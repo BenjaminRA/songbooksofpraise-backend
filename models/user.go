@@ -19,6 +19,7 @@ type User struct {
 	Admin     bool               `json:"admin" bson:"admin"`
 	Editor    bool               `json:"editor" bson:"editor"`
 	Moderator bool               `json:"moderator" bson:"moderator"`
+	Verified  bool               `json:"verified" bson:"verified"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
@@ -87,6 +88,7 @@ func (n *User) Register() error {
 	n.Admin = false
 	n.Editor = true
 	n.Moderator = false
+	n.Verified = false
 	n.CreatedAt = time.Now()
 	n.UpdatedAt = time.Now()
 
@@ -131,6 +133,7 @@ func (n *User) UpdateUser() error {
 			"admin":      n.Admin,
 			"moderator":  n.Moderator,
 			"editor":     n.Editor,
+			"verified":   n.Verified,
 			"updated_at": time.Now(),
 		},
 	})

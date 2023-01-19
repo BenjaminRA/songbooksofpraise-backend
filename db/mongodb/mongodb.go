@@ -66,6 +66,7 @@ func InitDatabase() {
 	db.CreateCollection(context.TODO(), "Songs")
 	db.CreateCollection(context.TODO(), "Songbooks")
 	db.CreateCollection(context.TODO(), "Users")
+	db.CreateCollection(context.TODO(), "Authors")
 }
 
 func UploadFile(data []byte, filename string) primitive.ObjectID {

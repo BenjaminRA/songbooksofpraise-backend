@@ -376,6 +376,8 @@ func (n *Song) UpdateSong() error {
 		return err
 	}
 
+	SetSongbookVerified(n.SongbookID.Hex(), false)
+
 	return nil
 }
 
@@ -413,6 +415,8 @@ func (n *Song) DeleteSong() error {
 		return err
 	}
 
+	SetSongbookVerified(n.SongbookID.Hex(), false)
+
 	return nil
 }
 
@@ -427,6 +431,8 @@ func (n *Song) CreateSong() error {
 	if err != nil {
 		return err
 	}
+
+	SetSongbookVerified(n.SongbookID.Hex(), false)
 
 	return nil
 }

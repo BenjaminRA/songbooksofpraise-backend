@@ -159,6 +159,8 @@ func UpdateSong(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
+	models.AddAuthor(song.Author)
+
 	return song, nil
 }
 
@@ -212,6 +214,8 @@ func CreateSong(p graphql.ResolveParams) (interface{}, error) {
 			return nil, err
 		}
 	}
+
+	models.AddAuthor(song.Author)
 
 	return song, nil
 }

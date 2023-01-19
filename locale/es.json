@@ -7,5 +7,9 @@
   "session_token.expired": "Token de Sesión ha expirado",
   "refresh_token.missing": "No se ha encontrado el Token de refresco",
   "refresh_token.invalid": "Token de refresco inválido",
-  "refresh_token.expired": "Token de refresco ha expirado"
+  "refresh_token.expired": "Token de refresco ha expirado",
+  "email.verify.subject": "Verificar Correo Electrónico",
+  "email.verify.message": "Hola!\nEste correo ha sido utilizado para crear una cuenta en el sistema Songbooks of Praise.\n\nPor favor, verifica tu identidad haciendo click en el siguiente enlace: %s\n\nQue tengas un bendecido día.",
+  "email.verify.invalid": "El token de verificación es inválido o ha expirado",
+  "email.verify.success": "Correo electrónico verificado con éxito"
 }

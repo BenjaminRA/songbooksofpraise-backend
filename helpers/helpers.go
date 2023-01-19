@@ -63,6 +63,13 @@ func LoadLocalEnv() {
 	}
 }
 
+func HashValue(value string) string {
+	hash := sha256.New()
+	key := hash.Sum([]byte(value))
+
+	return fmt.Sprintf("%x", key)
+}
+
 func GetSecretString() string {
 	LoadLocalEnv()
 	hash := sha256.New()

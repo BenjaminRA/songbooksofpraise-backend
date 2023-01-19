@@ -10,7 +10,7 @@ import (
 
 func CheckAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/register" {
+		if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/register" || c.Request.URL.Path == "/auth/verification" {
 			c.Next()
 			return
 		}

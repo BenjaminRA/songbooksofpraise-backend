@@ -31,31 +31,18 @@ var Songbook = graphql.NewObject(
 			"numeration": &graphql.Field{
 				Type: graphql.Boolean,
 			},
-			"owners_id": &graphql.Field{
-				Type: graphql.NewList(graphql.String),
+			"verified": &graphql.Field{
+				Type: graphql.Boolean,
+			},
+			"owner_id": &graphql.Field{
+				Type: graphql.String,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					temp := []string{}
-					ids := p.Source.(models.Songbook).OwnersID
-
-					for _, id := range ids {
-						temp = append(temp, id.Hex())
-					}
-
-					return temp, nil
+					id := p.Source.(models.Songbook).OwnerID.Hex()
+					return id, nil
 				},
 			},
-			"editors_id": &graphql.Field{
+			"editors": &graphql.Field{
 				Type: graphql.NewList(graphql.String),
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					temp := []string{}
-					ids := p.Source.(models.Songbook).EditorsID
-
-					for _, id := range ids {
-						temp = append(temp, id.Hex())
-					}
-
-					return temp, nil
-				},
 			},
 			"created_at": &graphql.Field{
 				Type: graphql.DateTime,
@@ -85,7 +72,10 @@ var NewSongbook = graphql.NewInputObject(graphql.InputObjectConfig{
 		"numeration": &graphql.InputObjectFieldConfig{
 			Type: graphql.Boolean,
 		},
-		"editors_id": &graphql.InputObjectFieldConfig{
+		"owner_id": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"editors": &graphql.InputObjectFieldConfig{
 			Type: graphql.NewList(graphql.String),
 		},
 	},
@@ -149,41 +139,17 @@ func init() {
 		},
 	})
 
-	Songbook.AddFieldConfig("editors", &graphql.Field{
+	Songbook.AddFieldConfig("owner", &graphql.Field{
 		Type: graphql.NewList(User),
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			ids := p.Source.(models.Songbook).EditorsID
-			users := []models.User{}
+			id := p.Source.(models.Songbook).OwnerID
 
-			for _, id := range ids {
-				user, err := new(models.User).GetUserById(id.Hex())
-				if err != nil {
-					return nil, err
-				}
-
-				users = append(users, user)
+			user, err := new(models.User).GetUserById(id.Hex())
+			if err != nil {
+				return nil, err
 			}
 
-			return users, nil
-		},
-	})
-
-	Songbook.AddFieldConfig("owners", &graphql.Field{
-		Type: graphql.NewList(User),
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			ids := p.Source.(models.Songbook).OwnersID
-			users := []models.User{}
-
-			for _, id := range ids {
-				user, err := new(models.User).GetUserById(id.Hex())
-				if err != nil {
-					return nil, err
-				}
-
-				users = append(users, user)
-			}
-
-			return users, nil
+			return user, nil
 		},
 	})
 

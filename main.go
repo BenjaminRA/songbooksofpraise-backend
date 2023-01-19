@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	auth_handler "github.com/BenjaminRA/himnario-backend/handlers/auth"
 	files_handler "github.com/BenjaminRA/himnario-backend/handlers/files"
+	songbooks_handler "github.com/BenjaminRA/himnario-backend/handlers/songbooks"
 	song_handler "github.com/BenjaminRA/himnario-backend/handlers/songs"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
 	migration "github.com/BenjaminRA/himnario-backend/migration"
@@ -32,25 +34,6 @@ func main() {
 		fmt.Println("Migrating database")
 		migration.Migrate()
 	}
-
-	// err = smtp.SendMail(
-	// 	fmt.Sprintf("%s:smtp", os.Getenv("MAIL_HOST")),
-	// 	smtp.PlainAuth(
-	// 		os.Getenv("MAIL_IDENTITY"),
-	// 		os.Getenv("MAIL_USERNAME"),
-	// 		os.Getenv("MAIL_PASSWORD"),
-	// 		os.Getenv("MAIL_HOST"),
-	// 	),
-	// 	"Songbooks Of Praise",
-	// 	[]string{"success@simulator.amazonses.com"},
-	// 	[]byte("Mensaje"),
-	// )
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// os.Exit(0)
 
 	schemaConfig := graphql.SchemaConfig{
 		Query:    graphql.NewObject(schema.Query),
@@ -114,6 +97,10 @@ func main() {
 	router.PUT("/auth/user", auth_handler.UpdateUser)
 	router.DELETE("/auth/user", auth_handler.DeleteUser)
 	router.GET("/auth/users", auth_handler.GetUsers)
+	router.POST("/auth/verification", auth_handler.VerifyUserEmail)
+	router.POST("/auth/verification/resend", auth_handler.EmailVerificationResend)
 
-	router.Run("localhost:8080")
+	router.POST("/songbooks/:id/verify", songbooks_handler.VerifySongbook)
+
+	router.Run(fmt.Sprintf("%s:%s", os.Getenv("BACKEND_HOST"), os.Getenv("BACKEND_PORT")))
 }

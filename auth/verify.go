@@ -5,6 +5,7 @@ import (
 	"os"
 
 	redisdb "github.com/BenjaminRA/himnario-backend/db/redis"
+	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -74,7 +75,12 @@ func VerifyToken(c *gin.Context) error {
 			return fmt.Errorf("session_token.missing")
 		}
 
-		token, err := CreateToken(result.Val())
+		user, err := new(models.User).GetUserById(result.Val())
+		if err != nil {
+			return fmt.Errorf("refresh_token.invalid")
+		}
+
+		token, err := CreateToken(user)
 		if err != nil {
 			return fmt.Errorf("refresh_token.invalid")
 		}

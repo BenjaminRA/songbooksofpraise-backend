@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 
 	auth "github.com/BenjaminRA/himnario-backend/auth"
+	"github.com/BenjaminRA/himnario-backend/email"
 	"github.com/BenjaminRA/himnario-backend/helpers"
 	"github.com/BenjaminRA/himnario-backend/locale"
 	"github.com/BenjaminRA/himnario-backend/models"
@@ -30,7 +30,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.CreateToken(user.ID.Hex())
+	token, err := auth.CreateToken(user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -38,12 +38,49 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	email.SendVerificationEmail(c, user)
+
 	token.SendToken(c)
 
 	user.Password = ""
 	c.JSON(http.StatusOK, gin.H{
 		"user": user,
 	})
+}
+
+func VerifyUserEmail(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+	var body gin.H
+	c.BindJSON(&body)
+
+	verificationToken := body["token"].(string)
+
+	_, err := auth.VerifyVerificationToken(verificationToken)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": locale.GetLocalizedMessage(lang, "email.verify.invalid"),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": locale.GetLocalizedMessage(lang, "email.verify.success"),
+	})
+}
+
+func EmailVerificationResend(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+	user, err := auth.RetrieveUser(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": locale.GetLocalizedMessage(lang, "email.verify.invalid"),
+		})
+		return
+	}
+
+	email.SendVerificationEmail(c, user)
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func Login(c *gin.Context) {
@@ -63,7 +100,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.CreateToken(user.ID.Hex())
+	token, err := auth.CreateToken(user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -120,13 +157,11 @@ func UpdateUser(c *gin.Context) {
 	c.BindJSON(&body)
 
 	if err := helpers.BindJSON(body, &user); err != nil {
-		fmt.Println(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
 		return
 	}
 
 	if err := user.UpdateUser(); err != nil {
-		fmt.Println(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
 		return
 	}

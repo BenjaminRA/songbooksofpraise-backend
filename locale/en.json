@@ -7,5 +7,9 @@
   "session_token.expired": "Expired session token",
   "refresh_token.missing": "Missing refresh token",
   "refresh_token.invalid": "Invalid refresh token",
-  "refresh_token.expired": "Expired refresh token"
+  "refresh_token.expired": "Expired refresh token",
+  "email.verify.subject": "Verify Email",
+  "email.verify.message": "Hi!\nAn account has been created with this email on the Songbook of Praise system.\n\nPlease confirm your identity by clicking on the following link: %s\n\nHave a blessed day.",
+  "email.verify.invalid": "Verification token is invalid or has expired",
+  "email.verify.success": "Email verified successfully"
 }

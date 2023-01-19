@@ -180,8 +180,9 @@ func Migrate() {
 		Description:  "...",
 		CountryCode:  "CL",
 		Numeration:   true,
-		EditorsID:    []primitive.ObjectID{admin_user_id},
-		OwnersID:     []primitive.ObjectID{admin_user_id},
+		Verified:     true,
+		Editors:      []string{os.Getenv("ADMIN_EMAIL")},
+		OwnerID:      admin_user_id,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -277,8 +278,9 @@ func Migrate() {
 		LanguageCode: "ES",
 		Description:  "...",
 		CountryCode:  "CL",
-		EditorsID:    []primitive.ObjectID{admin_user_id},
-		OwnersID:     []primitive.ObjectID{admin_user_id},
+		Verified:     false,
+		Editors:      []string{os.Getenv("ADMIN_EMAIL")},
+		OwnerID:      admin_user_id,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
