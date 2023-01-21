@@ -140,7 +140,7 @@ func (n *Category) CreateCategory() error {
 		return err
 	}
 
-	SetSongbookVerified(n.SongbookID.Hex(), false)
+	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
 
 	return nil
 }
@@ -168,7 +168,7 @@ func (n *Category) UpdateCategory() error {
 		return (err)
 	}
 
-	SetSongbookVerified(n.SongbookID.Hex(), false)
+	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
 
 	return nil
 }
@@ -203,7 +203,7 @@ func (n *Category) DeleteCategory() error {
 		return (err)
 	}
 
-	SetSongbookVerified(n.SongbookID.Hex(), false)
+	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
 
 	return nil
 }

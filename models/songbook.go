@@ -21,7 +21,8 @@ type Songbook struct {
 	Categories   []Category         `json:"categories,omitempty" bson:"categories,omitempty"`
 	Numeration   bool               `json:"numeration" bson:"numeration"`
 	Verified     bool               `json:"verified" bson:"verified"`
-	Owner        User               `json:"owner" bson:"owner"`
+	ToVerify     bool               `json:"to_verify" bson:"to_verify"`
+	SentToVerify bool               `json:"sent_to_verify" bson:"sent_to_verify"`
 	OwnerID      primitive.ObjectID `json:"owner_id" bson:"owner_id"`
 	Editors      []string           `json:"editors" bson:"editors"`
 	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
@@ -270,14 +271,16 @@ func (n *Songbook) UpdateSongbook() error {
 		"_id": n.ID,
 	}, bson.M{
 		"$set": bson.M{
-			"title":         n.Title,
-			"description":   n.Description,
-			"language_code": n.LanguageCode,
-			"country_code":  n.CountryCode,
-			"numeration":    n.Numeration,
-			"editors":       n.Editors,
-			"verified":      false,
-			"updated_at":    time.Now(),
+			"title":          n.Title,
+			"description":    n.Description,
+			"language_code":  n.LanguageCode,
+			"country_code":   n.CountryCode,
+			"numeration":     n.Numeration,
+			"editors":        n.Editors,
+			"verified":       false,
+			"to_verify":      false,
+			"sent_to_verify": false,
+			"updated_at":     time.Now(),
 		},
 	})
 	if err != nil {
@@ -287,7 +290,7 @@ func (n *Songbook) UpdateSongbook() error {
 	return nil
 }
 
-func SetSongbookVerified(id string, verified bool) error {
+func SetSongbookVerificationStatus(id string, verified bool, to_verify bool, sent_to_verify bool) error {
 	db := mongodb.GetMongoDBConnection()
 	objectID, _ := primitive.ObjectIDFromHex(id)
 
@@ -295,8 +298,10 @@ func SetSongbookVerified(id string, verified bool) error {
 		"_id": objectID,
 	}, bson.M{
 		"$set": bson.M{
-			"verified":   verified,
-			"updated_at": time.Now(),
+			"verified":       verified,
+			"to_verify":      to_verify,
+			"sent_to_verify": sent_to_verify,
+			"updated_at":     time.Now(),
 		},
 	})
 	if err != nil {

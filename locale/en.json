@@ -11,5 +11,15 @@
   "email.verify.subject": "Verify Email",
   "email.verify.message": "Hi!\nAn account has been created with this email on the Songbook of Praise system.\n\nPlease confirm your identity by clicking on the following link: %s\n\nHave a blessed day.",
   "email.verify.invalid": "Verification token is invalid or has expired",
-  "email.verify.success": "Email verified successfully"
+  "email.verify.success": "Email verified successfully",
+  "email.editor.removed.subject": "Editor Removed",
+  "email.editor.removed.content": "Hi!\nYou have been removed from the editor list of the the Songbook: \"%s\".\n\nHave a blessed day.",
+  "email.editor.added.subject": "Editor Added",
+  "email.editor.added.content": "Hi!\nYou have been added in the editor list of the the Songbook: \"%s\".\n\nHave a blessed day.",
+  "email.songbook.verified.subject": "Songbook verified",
+  "email.songbook.verified.content": "Hi!\nThe Songbook: \"%s\" has been verified and is now listed for the public.\n\nHave a blessed day.",
+  "email.songbook.sent_to_verify.subject": "Songbook waiting for verification",
+  "email.songbook.sent_to_verify.content": "Hi!\nThe Songbook: \"%s\" has been submitted to be verified.\n\nHave a blessed day.",
+  "email.songbook.rejected.subject": "Songbook rejected",
+  "email.songbook.rejected.content": "Hi!\nThe Songbook: \"%s\" has been rejected and will not be listed for the public.\n\nHave a blessed day."
 }

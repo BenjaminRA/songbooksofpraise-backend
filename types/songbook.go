@@ -34,6 +34,12 @@ var Songbook = graphql.NewObject(
 			"verified": &graphql.Field{
 				Type: graphql.Boolean,
 			},
+			"to_verify": &graphql.Field{
+				Type: graphql.Boolean,
+			},
+			"sent_to_verify": &graphql.Field{
+				Type: graphql.Boolean,
+			},
 			"owner_id": &graphql.Field{
 				Type: graphql.String,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {

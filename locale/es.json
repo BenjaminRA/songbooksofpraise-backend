@@ -11,5 +11,11 @@
   "email.verify.subject": "Verificar Correo Electrónico",
   "email.verify.message": "Hola!\nEste correo ha sido utilizado para crear una cuenta en el sistema Songbooks of Praise.\n\nPor favor, verifica tu identidad haciendo click en el siguiente enlace: %s\n\nQue tengas un bendecido día.",
   "email.verify.invalid": "El token de verificación es inválido o ha expirado",
-  "email.verify.success": "Correo electrónico verificado con éxito"
+  "email.verify.success": "Correo electrónico verificado con éxito",
+  "email.editor.removed.subject": "Editor Removido",
+  "email.editor.removed.content": "Hola!\nHas sido removido de la lista de editors del Cancionero: \"%s\".\n\nQue tengas un bendecido día.",
+  "email.editor.added.subject": "Editor añadido",
+  "email.editor.added.content": "Hola!\nHas sido añadido a la lista de editors del Cancionero: \"%s\".\n\nQue tengas un bendecido día.",
+  "email.songbook.verified.subject": "Cancionero Verificado",
+  "email.songbook.verified.content": "Hola!\nEl cancionero: \"%s\" ha sido verificado y ahora puede ser visto en la lista pública de cancioneros.\n\nQue tengas un bendecido día."
 }

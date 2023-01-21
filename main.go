@@ -101,6 +101,8 @@ func main() {
 	router.POST("/auth/verification/resend", auth_handler.EmailVerificationResend)
 
 	router.POST("/songbooks/:id/verify", songbooks_handler.VerifySongbook)
+	router.POST("/songbooks/:id/send-to-verify", songbooks_handler.SendToVerifySongbook)
+	router.POST("/songbooks/:id/reject", songbooks_handler.RejectSongbook)
 
 	router.Run(fmt.Sprintf("%s:%s", os.Getenv("BACKEND_HOST"), os.Getenv("BACKEND_PORT")))
 }

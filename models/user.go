@@ -77,6 +77,26 @@ func (n *User) GetAllUsers() ([]User, error) {
 	return result, nil
 }
 
+func (n *User) GetAllModerators() ([]User, error) {
+	db := mongodb.GetMongoDBConnection()
+	cursor, err := db.Collection("Users").Find(context.TODO(), bson.M{
+		"moderator": true,
+	})
+	if err != nil {
+		return []User{}, err
+	}
+
+	result := []User{}
+
+	for cursor.Next(context.TODO()) {
+		elem := User{}
+		cursor.Decode(&elem)
+		result = append(result, elem)
+	}
+
+	return result, nil
+}
+
 func (n *User) Register() error {
 	if CheckEmailTaken(n.Email) {
 		return fmt.Errorf("register.invalid.email")

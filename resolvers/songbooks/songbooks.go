@@ -3,7 +3,9 @@ package songbooks
 import (
 	"fmt"
 
+	emails "github.com/BenjaminRA/himnario-backend/email"
 	"github.com/BenjaminRA/himnario-backend/helpers"
+	"github.com/BenjaminRA/himnario-backend/locale"
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/graphql-go/graphql"
 )
@@ -50,11 +52,20 @@ func UpdateSongbook(p graphql.ResolveParams) (interface{}, error) {
 		return nil, fmt.Errorf("songbook not found")
 	}
 
+	currentEditors := []string{}
+	for _, editor := range songbook.Editors {
+		currentEditors = append(currentEditors, editor)
+	}
+
 	if err := helpers.BindJSON(p.Args["songbook"], &songbook); err != nil {
 		return nil, err
 	}
 
 	if err := songbook.UpdateSongbook(); err != nil {
+		return nil, err
+	}
+
+	if err := emails.EmailEditors(currentEditors, songbook, lang); err != nil {
 		return nil, err
 	}
 
@@ -72,6 +83,18 @@ func CreateSongbook(p graphql.ResolveParams) (interface{}, error) {
 	err := songbook.CreateSongbook(lang)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, email := range songbook.Editors {
+		err := emails.SendEmail(
+			email,
+			locale.GetLocalizedMessage(lang, "email.editor.added.subject"),
+			fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.editor.added.content"), songbook.Title),
+		)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return songbook, nil
