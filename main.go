@@ -47,7 +47,7 @@ func main() {
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://admin:3000"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
 		AllowHeaders:     []string{"Content-Type", "Accept-Language"},
 		AllowCredentials: true,
@@ -104,5 +104,5 @@ func main() {
 	router.POST("/songbooks/:id/send-to-verify", songbooks_handler.SendToVerifySongbook)
 	router.POST("/songbooks/:id/reject", songbooks_handler.RejectSongbook)
 
-	router.Run(fmt.Sprintf("%s:%s", os.Getenv("BACKEND_HOST"), os.Getenv("BACKEND_PORT")))
+	router.Run(fmt.Sprintf("0.0.0.0:%s", os.Getenv("BACKEND_PORT")))
 }
