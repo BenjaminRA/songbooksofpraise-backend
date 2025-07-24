@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/BenjaminRA/himnario-backend/aws"
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"github.com/BenjaminRA/himnario-backend/models"
 	_ "github.com/mattn/go-sqlite3"
@@ -36,7 +37,9 @@ func HimnoToSong(himno *models.Himno, songbook_id primitive.ObjectID, categories
 	if himno.ID > 517 {
 		himno.ID = himno.ID - 517
 	} else {
-		music_sheet = mongodb.UploadFilePath(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
+		music_sheet := aws.S3UploadFile(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID), fmt.Sprintf("hymns/%v.jpg", himno.ID), os.Getenv("AWS_S3_MUSIC_SHEET_BUCKET"))
+
+		// music_sheet = mongodb.UploadFilePath(fmt.Sprintf("./assets/hymns/%v.jpg", himno.ID))
 		voices := []string{"Bajo", "ContraAlto", "Soprano", "Tenor", "Todos"}
 		voices_map := map[string]string{
 			"Bajo":       "bass",
@@ -190,7 +193,10 @@ func Migrate() {
 		UpdatedAt:    time.Now(),
 	}
 
-	songbook_result, _ := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+	songbook_result, err := db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+	if err != nil {
+		panic(err)
+	}
 
 	// Getting all hymns
 	himnos, _ := new(models.Himno).GetHimnos()
@@ -263,6 +269,8 @@ func Migrate() {
 	}
 
 	for _, himno := range himnos {
+		fmt.Printf("Ingresando himno %v\n", himno.ID)
+
 		addCategoryToHimno(&himnos_category, himno.ID, todos_id)
 		db.Collection("Songs").InsertOne(context.TODO(), HimnoToSong(
 			&himno,
@@ -290,7 +298,10 @@ func Migrate() {
 		UpdatedAt:    time.Now(),
 	}
 
-	songbook_result, _ = db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+	songbook_result, err = db.Collection("Songbooks").InsertOne(context.TODO(), songbook)
+	if err != nil {
+		panic(err)
+	}
 
 	// Getting all coros
 	himnos, _ = new(models.Himno).GetCoros()
@@ -310,6 +321,8 @@ func Migrate() {
 
 	// Getting verses of coros
 	for i, himno := range himnos {
+		fmt.Printf("Ingresando coro %v\n", himno.ID)
+
 		parrafos, _ := new(models.Parrafo).GetParrafos(himno.ID)
 		himnos[i].Parrafos = parrafos
 

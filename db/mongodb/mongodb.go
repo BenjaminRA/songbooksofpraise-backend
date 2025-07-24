@@ -31,7 +31,7 @@ func GetMongoDBConnection() *mongo.Database {
 		mongodb, err = mongo.Connect(
 			context.TODO(),
 			options.Client().ApplyURI(
-				fmt.Sprintf("mongodb://%s:%s/?readPreference=primary&appname=songbooks_of_praise_backend&directConnection=true&ssl=false",
+				fmt.Sprintf("mongodb+srv://%s:%s@songbooks-of-praise.wve81.mongodb.net/?retryWrites=true&w=majority&appName=Songbooks-of-Praise",
 					os.Getenv("DB_HOST"),
 					os.Getenv("DB_PORT"),
 				),
@@ -97,7 +97,10 @@ func UploadFile(data []byte, filename string) primitive.ObjectID {
 func CleanDatabase() {
 	db := GetMongoDBConnection()
 
-	db.Drop(context.TODO())
+	if err := db.Drop(context.TODO()); err != nil {
+		panic(err)
+	}
+
 }
 
 // Uploads a file to the mongodb database

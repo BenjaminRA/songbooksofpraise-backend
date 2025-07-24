@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/BenjaminRA/himnario-backend/aws"
 	"github.com/BenjaminRA/himnario-backend/db/mongodb"
 	"github.com/tcolgate/mp3"
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,7 +25,7 @@ type Song struct {
 	CategoriesID []primitive.ObjectID `json:"categories_id" bson:"categories_id"`
 	Title        string               `json:"title" bson:"title"`
 	Chords       bool                 `json:"chords" bson:"chords"`
-	MusicSheet   primitive.ObjectID   `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"`
+	MusicSheet   string               `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"`
 	Music        primitive.ObjectID   `json:"music,omitempty" bson:"music,omitempty"`
 	MusicOnly    primitive.ObjectID   `json:"music_only,omitempty" bson:"music_only,omitempty"`
 	Author       string               `json:"author,omitempty" bson:"author,omitempty"`
@@ -168,9 +169,9 @@ func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
 	return buf.Bytes(), results_object["filename"].(string), nil
 }
 
-func (n *Song) DeleteFileByID(id primitive.ObjectID, db *mongo.Database, ctx context.Context) error {
+func (n *Song) DeleteFileByID() error {
 	_, err := db.Collection("fs.files").DeleteMany(ctx, bson.M{"_id": id})
-	return err
+	return aws.S3DeleteFile()
 }
 
 func (n *Song) SetField(field string, value interface{}, db *mongo.Database) error {

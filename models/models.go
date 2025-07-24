@@ -35,6 +35,7 @@ func (n *Himno) GetHimnos() ([]Himno, error) {
 	// Ejecutamos la query
 	rows, err := db.Query(q)
 	if err != nil {
+		panic(err)
 		return []Himno{}, err
 	}
 
