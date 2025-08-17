@@ -8,8 +8,24 @@ import (
 )
 
 func EmailEditors(current []string, updated models.Songbook, lang string) error {
+	// Get current editors from database
+	editors, err := models.GetSongbookEditors(updated.ID)
+	if err != nil {
+		return err
+	}
+
+	// Convert to email addresses
+	newEditors := make([]string, len(editors))
+	for i, editor := range editors {
+		user, err := new(models.User).GetUserById(editor.UserID)
+		if err != nil {
+			continue
+		}
+		newEditors[i] = user.Email
+	}
+
 	fmt.Printf("current: %v\n", current)
-	fmt.Printf("new_editors: %v\n", updated.Editors)
+	fmt.Printf("new_editors: %v\n", newEditors)
 	added := []string{}
 	deleted := []string{}
 	all_editors := []string{}
@@ -23,7 +39,7 @@ func EmailEditors(current []string, updated models.Songbook, lang string) error 
 	}
 
 	new_editors := map[string]bool{}
-	for _, editor := range updated.Editors {
+	for _, editor := range newEditors {
 		if _, ok := new_editors[editor]; !ok {
 			if _, ok := old_editors[editor]; !ok {
 				all_editors = append(all_editors, editor)

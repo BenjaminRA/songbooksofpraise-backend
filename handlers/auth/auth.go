@@ -118,6 +118,8 @@ func Login(c *gin.Context) {
 func GetUser(c *gin.Context) {
 	user, err := auth.RetrieveUser(c)
 
+	user.Password = ""
+
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

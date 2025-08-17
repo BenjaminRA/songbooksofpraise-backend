@@ -1,76 +1,109 @@
 package models
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/BenjaminRA/himnario-backend/db/mongodb"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 )
 
 type User struct {
-	ID        primitive.ObjectID `json:"_id" bson:"_id"`
-	FirstName string             `json:"first_name" bson:"first_name"`
-	LastName  string             `json:"last_name" bson:"last_name"`
-	Email     string             `json:"email" bson:"email"`
-	Password  string             `json:"password,omitempty" bson:"password,omitempty"`
-	Admin     bool               `json:"admin" bson:"admin"`
-	Editor    bool               `json:"editor" bson:"editor"`
-	Moderator bool               `json:"moderator" bson:"moderator"`
-	Verified  bool               `json:"verified" bson:"verified"`
-	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+	ID        int       `json:"id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password,omitempty"`
+	Admin     bool      `json:"admin"`
+	Editor    bool      `json:"editor"`
+	Moderator bool      `json:"moderator"`
+	Verified  bool      `json:"verified"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func CheckEmailTaken(email string) bool {
-	db := mongodb.GetMongoDBConnection()
-	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
-		"email": email,
-	})
-	return match.Err() == nil
-}
+	// db := mongodb.GetMongoDBConnection()
+	// match := db.Collection("Users").FindOne(context.TODO(), bson.M{
+	// 	"email": email,
+	// })
 
-func CheckEmailTakenWithId(email string, user_id primitive.ObjectID) bool {
-	db := mongodb.GetMongoDBConnection()
-	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
-		"_id":   bson.M{"$ne": user_id},
-		"email": email,
-	})
-	return match.Err() == nil
-}
+	db := sqlite.GetDBConnection()
+	result := db.QueryRow("SELECT email FROM users WHERE email = ?", email)
 
-func (n *User) GetUserById(user_id string) (User, error) {
-	db := mongodb.GetMongoDBConnection()
-	objectID, _ := primitive.ObjectIDFromHex(user_id)
-
-	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
-		"_id": objectID,
-	})
-
-	if match.Err() != nil {
-		return User{}, match.Err()
+	if result.Err() != nil {
+		return false
 	}
 
-	var user User
-	match.Decode(&user)
+	var existingEmail string
+	if err := result.Scan(&existingEmail); err != nil {
+		if err == sql.ErrNoRows {
+			return false // No user with this email exists
+		}
+		fmt.Println("Error scanning email:", err.Error())
+		return true // Error occurred, assume email is taken
+	}
 
+	return existingEmail == email // Email exists in the database
+
+}
+
+func CheckEmailTakenWithId(email string, user_id int) bool {
+	db := sqlite.GetDBConnection()
+	result := db.QueryRow("SELECT email FROM users WHERE email = ? AND id != ?", email, user_id)
+
+	if result.Err() != nil {
+		return false
+	}
+
+	var existingEmail string
+	if err := result.Scan(&existingEmail); err != nil {
+		if err == sql.ErrNoRows {
+			return false // No user with this email exists
+		}
+		fmt.Println("Error scanning email:", err)
+		return true // Error occurred, assume email is taken
+	}
+
+	return existingEmail == email // Email exists in the database
+
+}
+
+func (n *User) GetUserById(user_id int) (User, error) {
+	db := sqlite.GetDBConnection()
+	var user User
+	err := db.QueryRow("SELECT * FROM users WHERE id = ?", user_id).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Admin, &user.Editor, &user.Moderator, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
+}
+
+func (n *User) GetUserByEmail(email string) (User, error) {
+	db := sqlite.GetDBConnection()
+	var user User
+	err := db.QueryRow("SELECT * FROM users WHERE email = ?", email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Admin, &user.Editor, &user.Moderator, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return User{}, err
+	}
 	return user, nil
 }
 
 func (n *User) GetAllUsers() ([]User, error) {
-	db := mongodb.GetMongoDBConnection()
-	cursor, err := db.Collection("Users").Find(context.TODO(), bson.M{})
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, first_name, last_name, email, password, admin, editor, moderator, verified, created_at, updated_at FROM users")
 	if err != nil {
 		return []User{}, err
 	}
+	defer rows.Close()
 
 	result := []User{}
-
-	for cursor.Next(context.TODO()) {
+	for rows.Next() {
 		elem := User{}
-		cursor.Decode(&elem)
+		err := rows.Scan(&elem.ID, &elem.FirstName, &elem.LastName, &elem.Email, &elem.Password, &elem.Admin, &elem.Editor, &elem.Moderator, &elem.Verified, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
 		result = append(result, elem)
 	}
 
@@ -78,19 +111,20 @@ func (n *User) GetAllUsers() ([]User, error) {
 }
 
 func (n *User) GetAllModerators() ([]User, error) {
-	db := mongodb.GetMongoDBConnection()
-	cursor, err := db.Collection("Users").Find(context.TODO(), bson.M{
-		"moderator": true,
-	})
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, first_name, last_name, email, password, admin, editor, moderator, verified, created_at, updated_at FROM users WHERE moderator = 1")
 	if err != nil {
 		return []User{}, err
 	}
+	defer rows.Close()
 
 	result := []User{}
-
-	for cursor.Next(context.TODO()) {
+	for rows.Next() {
 		elem := User{}
-		cursor.Decode(&elem)
+		err := rows.Scan(&elem.ID, &elem.FirstName, &elem.LastName, &elem.Email, &elem.Password, &elem.Admin, &elem.Editor, &elem.Moderator, &elem.Verified, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
 		result = append(result, elem)
 	}
 
@@ -102,9 +136,8 @@ func (n *User) Register() error {
 		return fmt.Errorf("register.invalid.email")
 	}
 
-	db := mongodb.GetMongoDBConnection()
+	db := sqlite.GetDBConnection()
 
-	n.ID = primitive.NewObjectID()
 	n.Admin = false
 	n.Editor = true
 	n.Moderator = false
@@ -112,27 +145,29 @@ func (n *User) Register() error {
 	n.CreatedAt = time.Now()
 	n.UpdatedAt = time.Now()
 
-	_, err := db.Collection("Users").InsertOne(context.TODO(), n)
+	result, err := db.Exec("INSERT INTO users (first_name, last_name, email, password, admin, editor, moderator, verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		n.FirstName, n.LastName, n.Email, n.Password, n.Admin, n.Editor, n.Moderator, n.Verified, n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
 	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	n.ID = int(id)
 
 	return nil
 }
 
 func (n *User) Login(email string, password string) (User, error) {
-	db := mongodb.GetMongoDBConnection()
-	match := db.Collection("Users").FindOne(context.TODO(), bson.M{
-		"email":    email,
-		"password": password,
-	})
-
-	if match.Err() != nil {
+	db := sqlite.GetDBConnection()
+	var user User
+	err := db.QueryRow("SELECT id, first_name, last_name, email, password, admin, editor, moderator, verified, created_at, updated_at FROM users WHERE email = ? AND password = ?", email, password).Scan(
+		&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Admin, &user.Editor, &user.Moderator, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
 		return User{}, fmt.Errorf("register.invalid.email")
 	}
-
-	var user User
-	match.Decode(&user)
 
 	return user, nil
 }
@@ -142,21 +177,11 @@ func (n *User) UpdateUser() error {
 		return fmt.Errorf("register.invalid.email")
 	}
 
-	db := mongodb.GetMongoDBConnection()
-	_, err := db.Collection("Users").UpdateOne(context.TODO(), bson.M{
-		"email": n.Email,
-	}, bson.M{
-		"$set": bson.M{
-			"first_name": n.FirstName,
-			"last_name":  n.LastName,
-			"email":      n.Email,
-			"admin":      n.Admin,
-			"moderator":  n.Moderator,
-			"editor":     n.Editor,
-			"verified":   n.Verified,
-			"updated_at": time.Now(),
-		},
-	})
+	db := sqlite.GetDBConnection()
+	n.UpdatedAt = time.Now()
+
+	_, err := db.Exec("UPDATE users SET first_name = ?, last_name = ?, email = ?, admin = ?, editor = ?, moderator = ?, verified = ?, updated_at = ? WHERE id = ?",
+		n.FirstName, n.LastName, n.Email, n.Admin, n.Editor, n.Moderator, n.Verified, n.UpdatedAt, n.ID)
 	if err != nil {
 		return err
 	}
@@ -165,10 +190,8 @@ func (n *User) UpdateUser() error {
 }
 
 func (n *User) DeleteUser() error {
-	db := mongodb.GetMongoDBConnection()
-	_, err := db.Collection("Users").DeleteOne(context.TODO(), bson.M{
-		"email": n.Email,
-	})
+	db := sqlite.GetDBConnection()
+	_, err := db.Exec("DELETE FROM users WHERE email = ?", n.Email)
 	if err != nil {
 		return err
 	}

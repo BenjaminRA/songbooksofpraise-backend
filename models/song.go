@@ -1,483 +1,468 @@
 package models
 
 import (
-	"bytes"
-	"context"
-	"errors"
 	"fmt"
-	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/BenjaminRA/himnario-backend/aws"
-	"github.com/BenjaminRA/himnario-backend/db/mongodb"
-	"github.com/tcolgate/mp3"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"github.com/BenjaminRA/himnario-backend/db/sqlite"
+	"github.com/BenjaminRA/himnario-backend/helpers"
+	"github.com/oleiade/reflections"
 )
 
 type Song struct {
-	ID           primitive.ObjectID   `json:"_id" bson:"_id"`
-	SongbookID   primitive.ObjectID   `json:"songbook_id" bson:"songbook_id"`
-	Categories   []Category           `json:"categories,omitempty" bson:"categories,omitempty"`
-	CategoriesID []primitive.ObjectID `json:"categories_id" bson:"categories_id"`
-	Title        string               `json:"title" bson:"title"`
-	Chords       bool                 `json:"chords" bson:"chords"`
-	MusicSheet   string               `json:"music_sheet,omitempty" bson:"music_sheet,omitempty"`
-	Music        primitive.ObjectID   `json:"music,omitempty" bson:"music,omitempty"`
-	MusicOnly    primitive.ObjectID   `json:"music_only,omitempty" bson:"music_only,omitempty"`
-	Author       string               `json:"author,omitempty" bson:"author,omitempty"`
-	YouTubeLink  string               `json:"youtube_link,omitempty" bson:"youtube_link,omitempty"`
-	Description  string               `json:"description,omitempty" bson:"description,omitempty"`
-	BibleVerse   string               `json:"bible_verse,omitempty" bson:"bible_verse,omitempty"`
-	Number       int                  `json:"number,omitempty" bson:"number,omitempty"`
-	Text         string               `json:"text" bson:"text"`
-	Voices       []Voice              `json:"voices,omitempty" bson:"voices,omitempty"`
-	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
+	ID              int        `json:"id"`
+	Title           string     `json:"title"`
+	Lyrics          string     `json:"lyrics"`
+	MusicSheet      *string    `json:"music_sheet"`
+	Music           *string    `json:"music"`
+	MusicOnly       *string    `json:"music_only"`
+	YouTubeURL      *string    `json:"youtube_url"`
+	Description     *string    `json:"description"`
+	Number          *int       `json:"number"`
+	VoicesAll       *string    `json:"voices_all"`
+	VoicesSoprano   *string    `json:"voices_soprano"`
+	VoicesContralto *string    `json:"voices_contralto"`
+	VoicesTenor     *string    `json:"voices_tenor"`
+	VoicesBass      *string    `json:"voices_bass"`
+	Transpose       *int       `json:"transpose"`
+	ScrollSpeed     *int       `json:"scroll_speed"`
+	SongbookID      int        `json:"songbook_id"`
+	Categories      []Category `json:"categories"`    // Not in database, but used in API responses
+	CategoriesID    []int      `json:"categories_id"` // Not in database, but used in API responses
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
-func (n *Song) GetAllSongs(args map[string]interface{}) ([]Song, error) {
-	db := mongodb.GetMongoDBConnection()
+type SongCategory struct {
+	ID         int       `json:"id"`
+	SongID     int       `json:"song_id"`
+	CategoryID int       `json:"category_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
 
-	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
-		{"$match": args},
-		{"$lookup": bson.M{
-			"from":         "Categories",
-			"localField":   "categories_id",
-			"foreignField": "_id",
-			"pipeline": []bson.M{
-				{"$project": bson.M{"category": 1}},
-			},
-			"as": "categories",
-		}},
-	})
+func (n *Song) songbookUpdatedAt() error {
+	db := sqlite.GetDBConnection()
+	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now(), n.SongbookID)
+	return err
+}
+
+func (n *Song) GetAllSongs() ([]Song, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs")
 	if err != nil {
 		return []Song{}, err
 	}
+	defer rows.Close()
 
 	result := []Song{}
-
-	for cursor.Next(context.TODO()) {
+	for rows.Next() {
 		elem := Song{}
-		cursor.Decode(&elem)
+		err := rows.Scan(&elem.ID, &elem.Title, &elem.Lyrics, &elem.MusicSheet, &elem.Music, &elem.MusicOnly, &elem.YouTubeURL, &elem.Description, &elem.Number, &elem.VoicesAll, &elem.VoicesSoprano, &elem.VoicesContralto, &elem.VoicesTenor, &elem.VoicesBass, &elem.Transpose, &elem.ScrollSpeed, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
 		result = append(result, elem)
 	}
 
 	return result, nil
 }
 
-func (n *Song) GetSongByID(id string) (Song, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
+func (n *Song) GetSongByID(id int) (Song, error) {
+	db := sqlite.GetDBConnection()
+	var result Song
+	err := db.QueryRow("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs WHERE id = ?", id).Scan(
+		&result.ID, &result.Title, &result.Lyrics, &result.MusicSheet, &result.Music, &result.MusicOnly, &result.YouTubeURL, &result.Description, &result.Number, &result.VoicesAll, &result.VoicesSoprano, &result.VoicesContralto, &result.VoicesTenor, &result.VoicesBass, &result.Transpose, &result.ScrollSpeed, &result.SongbookID, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
 		return Song{}, err
 	}
 
-	cursor, err := db.Collection("Songs").Aggregate(context.TODO(), []bson.M{
-		{"$match": bson.M{"_id": object_id}},
-		{"$lookup": bson.M{
-			"from":         "Categories",
-			"localField":   "categories_id",
-			"foreignField": "_id",
-			"pipeline": []bson.M{
-				{"$project": bson.M{"category": 1, "all": 1}},
-			},
-			"as": "categories",
-		}},
-	})
+	var categories []Category
+	// Load categories for this song
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE id IN (SELECT category_id FROM song_categories WHERE song_id = ?)", id)
 	if err != nil {
 		return Song{}, err
 	}
+	defer rows.Close()
 
-	result := []Song{}
-
-	for cursor.Next(context.TODO()) {
-		elem := Song{}
-		cursor.Decode(&elem)
-		result = append(result, elem)
-	}
-
-	if len(result) == 0 {
-		return Song{}, fmt.Errorf("Song not found")
-	}
-
-	return result[0], nil
-}
-
-func (n *Song) GetMusicSheet(id string) ([]byte, string, error) {
-	return mongodb.FetchFile("Songs", id, "music_sheet")
-}
-
-func (n *Song) GetMusic(id string) ([]byte, string, error) {
-	return mongodb.FetchFile("Songs", id, "music")
-}
-
-func (n *Song) GetMusicOnly(id string) ([]byte, string, error) {
-	return mongodb.FetchFile("Songs", id, "music_only")
-}
-
-func (n *Song) GetVoice(id string, voice string) ([]byte, string, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	var results bson.M
-	err = db.Collection("Songs").FindOne(context.TODO(), bson.M{"_id": object_id}).Decode(&results)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	var file_id primitive.ObjectID
-
-	if results["voices"] == nil {
-		return nil, "", errors.New("this song does not contain voices")
-	}
-
-	for _, el := range results["voices"].(bson.A) {
-		if el.(bson.M)["voice"].(string) == voice {
-			file_id, _ = el.(bson.M)["file"].(primitive.ObjectID)
+	for rows.Next() {
+		var category Category
+		if err := rows.Scan(&category.ID, &category.Name, &category.ParentCategoryID, &category.SongbookID, &category.CreatedAt, &category.UpdatedAt); err != nil {
+			continue
 		}
+		categories = append(categories, category)
 	}
+	result.Categories = categories
 
-	if el, _ := primitive.ObjectIDFromHex("000000000000000000000000"); file_id == el {
-		return nil, "", errors.New("Voice not found")
-	}
-
-	var results_object bson.M
-	err = db.Collection("fs.files").FindOne(context.TODO(), bson.M{"_id": file_id}).Decode(&results_object)
-	if err != nil {
-		fmt.Println(err)
-		return nil, "", err
-	}
-
-	bucket, _ := gridfs.NewBucket(
-		db,
-	)
-	var buf bytes.Buffer
-	_, err = bucket.DownloadToStream(file_id, &buf)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, "", err
-	}
-	return buf.Bytes(), results_object["filename"].(string), nil
+	return result, nil
 }
 
-func (n *Song) DeleteFileByID() error {
-	_, err := db.Collection("fs.files").DeleteMany(ctx, bson.M{"_id": id})
-	return aws.S3DeleteFile()
-}
-
-func (n *Song) SetField(field string, value interface{}, db *mongo.Database) error {
-	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
-		"_id": n.ID,
-	}, bson.M{
-		"$set": bson.M{
-			field:        value,
-			"updated_at": time.Now(),
-		},
-	})
-
-	return err
-}
-
-func (n *Song) UnsetField(field string, db *mongo.Database) error {
-	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
-		"_id": n.ID,
-	}, bson.M{
-		"$set": bson.M{
-			"updated_at": time.Now(),
-		},
-		"$unset": bson.M{
-			field: "",
-		},
-	})
-
-	return err
-}
-
-func (n *Song) UpdateMusicSheet(path string) error {
-	if path == "__same__" {
-		return nil
-	}
-
-	db := mongodb.GetMongoDBConnection()
-
-	if n.ID.Hex() == "000000000000000000000000" {
-		return fmt.Errorf("Song not found")
-	}
-
-	// Delete current music sheet
-	err := n.DeleteFileByID(n.MusicSheet, db, context.TODO())
+func (n *Song) createS3File(fieldName string, bucket string) error {
+	actualFieldName, err := reflections.GetFieldNameByTagValue(n, "json", fieldName)
 	if err != nil {
 		return err
 	}
 
-	if path != "" {
-		n.MusicSheet = mongodb.UploadFilePath(path)
-		os.Remove(path)
-		n.SetField("music_sheet", n.MusicSheet, db)
-	} else {
-		n.UnsetField("music_sheet", db)
+	valueRaw, err := reflections.GetField(n, actualFieldName)
+	if err != nil {
+		return err
+	}
+
+	value, ok := valueRaw.(*string)
+	if !ok {
+		return fmt.Errorf("field %s is not a string pointer", actualFieldName)
+	}
+
+	if value != nil && *value == "__same__" {
+		return nil
+	}
+
+	filename := helpers.GetFilenameFromPath(*value)
+	key := strings.ReplaceAll(filename, "new", fmt.Sprintf("%d", n.ID))
+
+	url, err := aws.S3UploadFile(*value, key, os.Getenv(bucket))
+	if err != nil {
+		fmt.Printf("Failed to upload file to S3: %v\n", err)
+		return fmt.Errorf("failed to upload file to S3: %w", err)
+	}
+
+	// Delete file after uploading to S3
+	if err := os.Remove(*value); err != nil {
+		fmt.Printf("Failed to delete local file after upload: %s\n", err.Error())
+	}
+
+	value = &url // Update the new song's field with the S3 URL
+
+	reflections.SetField(n, actualFieldName, &url)
+
+	_, err = sqlite.GetDBConnection().Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", url, time.Now(), n.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update song in database: %w", err)
 	}
 
 	return nil
 }
 
-func (n *Song) UpdateMusicAudioOnly(path string) error {
-	if path == "__same__" {
-		return nil
-	}
+func (n *Song) CreateSong() error {
+	db := sqlite.GetDBConnection()
 
-	db := mongodb.GetMongoDBConnection()
+	n.CreatedAt = time.Now()
+	n.UpdatedAt = time.Now()
 
-	if n.ID.Hex() == "000000000000000000000000" {
-		return fmt.Errorf("Song not found")
-	}
-
-	// Delete current music
-	err := n.DeleteFileByID(n.MusicOnly, db, context.TODO())
+	result, err := db.Exec("INSERT INTO songs (title, lyrics, youtube_url, description, number, transpose, scroll_speed, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		n.Title, n.Lyrics, n.YouTubeURL, n.Description, n.Number, n.Transpose, n.ScrollSpeed, n.SongbookID, n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
 	}
 
-	if path != "" {
-		n.MusicOnly = mongodb.UploadFilePath(path)
-		os.Remove(path)
-		n.SetField("music_only", n.MusicOnly, db)
-	} else {
-		n.UnsetField("music_only", db)
-	}
-
-	return nil
-}
-
-func (n *Song) UpdateMusicAudio(path string) error {
-	if path == "__same__" {
-		return nil
-	}
-
-	db := mongodb.GetMongoDBConnection()
-
-	if n.ID.Hex() == "000000000000000000000000" {
-		return fmt.Errorf("Song not found")
-	}
-
-	// Delete current music
-	err := n.DeleteFileByID(n.Music, db, context.TODO())
+	id, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
+	n.ID = int(id)
 
-	if path != "" {
-		n.Music = mongodb.UploadFilePath(path)
-		os.Remove(path)
-		n.SetField("music", n.Music, db)
-	} else {
-		n.UnsetField("music", db)
-	}
+	n.createS3File("music_sheet", "AWS_S3_MUSIC_SHEET_BUCKET")
+	n.createS3File("music", "AWS_S3_MUSIC_BUCKET")
+	n.createS3File("music_only", "AWS_S3_MUSIC_ONLY_BUCKET")
+	n.createS3File("voices_all", "AWS_S3_VOICES_BUCKET")
+	n.createS3File("voices_soprano", "AWS_S3_VOICES_BUCKET")
+	n.createS3File("voices_contralto", "AWS_S3_VOICES_BUCKET")
+	n.createS3File("voices_tenor", "AWS_S3_VOICES_BUCKET")
+	n.createS3File("voices_bass", "AWS_S3_VOICES_BUCKET")
 
-	return nil
-}
-
-func (n *Song) UpdateVoices(path string, voice string) error {
-	if path == "__same__" {
-		return nil
-	}
-	db := mongodb.GetMongoDBConnection()
-
-	if n.ID.Hex() == "000000000000000000000000" {
-		return fmt.Errorf("Song not found")
-	}
-
-	// Get voice to edit
-	var voice_pointer *Voice
-	var voice_index int
-	for idx, item := range n.Voices {
-		if item.Voice == voice {
-			voice_pointer = &item
-			voice_index = idx
-			break
-		}
-	}
-
-	if voice_pointer != nil {
-		// Delete current voice
-		err := n.DeleteFileByID(voice_pointer.File, db, context.TODO())
+	for _, categoryID := range n.CategoriesID {
+		_, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
+			n.ID, categoryID, time.Now(), time.Now())
 		if err != nil {
 			return err
 		}
+	}
 
-		// voice has been deleted
-		if path != "" {
-			duration := GetFileDuration(path)
-			(*voice_pointer).File = mongodb.UploadFilePath(path)
-			(*voice_pointer).Duration = duration
-			os.Remove(path)
-			n.SetField("voices", n.Voices, db)
-			// Voice has been replaced
-		} else {
-			if len(n.Voices) == 1 {
-				n.UnsetField("voices", db)
-				n.Voices = nil
-			} else {
-				copy(n.Voices[voice_index:], n.Voices[voice_index+1:])
-				n.Voices = n.Voices[:len(n.Voices)-1]
-				n.SetField("voices", n.Voices, db)
-			}
-		}
-		// This voices has just been added
-	} else {
-		if n.Voices == nil {
-			n.Voices = []Voice{}
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Song) replaceFile(newSong *Song, fieldName string, bucket string) error {
+	actualFieldName, err := reflections.GetFieldNameByTagValue(n, "json", fieldName)
+	if err != nil {
+		return err
+	}
+
+	originalValueRaw, err := reflections.GetField(n, actualFieldName)
+	if err != nil {
+		return err
+	}
+
+	originalValue, ok := originalValueRaw.(*string)
+	if !ok {
+		return fmt.Errorf("field %s is not a string pointer", actualFieldName)
+	}
+
+	newValueRaw, err := reflections.GetField(newSong, actualFieldName)
+	if err != nil {
+		return err
+	}
+
+	newValue, ok := newValueRaw.(*string)
+	if !ok {
+		return fmt.Errorf("field %s is not a string pointer", actualFieldName)
+	}
+
+	// Replacing music sheet file if it has changed
+	if newValue != nil {
+		// Do nothing if the value is "__same__"
+		if *newValue == "__same__" {
+			return nil
 		}
 
-		duration := GetFileDuration(path)
-		new_voice := Voice{
-			Voice:    voice,
-			File:     mongodb.UploadFilePath(path),
-			Duration: duration,
+		url, err := aws.S3UploadFile(*newValue, helpers.GetFilenameFromPath(*newValue), os.Getenv(bucket))
+		if err != nil {
+			fmt.Printf("Failed to upload file to S3: %v\n", err)
+			return fmt.Errorf("failed to upload file to S3: %w", err)
 		}
-		os.Remove(path)
 
-		n.Voices = append(n.Voices, new_voice)
-		n.SetField("voices", n.Voices, db)
+		// Delete file after uploading to S3
+		if err := os.Remove(*newValue); err != nil {
+			return fmt.Errorf("failed to delete local file after upload: %w", err)
+		}
+
+		newValue = &url // Update the new song's field with the S3 URL
+
+		reflections.SetField(newSong, actualFieldName, &url)
+	}
+
+	// Delete old music sheet if it was changed
+	if newValue == nil && originalValue != nil {
+		filename := helpers.GetFilenameFromPath(*originalValue)
+		if err := aws.S3DeleteFile(filename, os.Getenv(bucket)); err != nil {
+			return err
+		}
+	}
+
+	db := sqlite.GetDBConnection()
+
+	_, err = db.Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", newValue, time.Now(), newSong.ID)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (n *Song) UpdateSong() error {
-	db := mongodb.GetMongoDBConnection()
+	db := sqlite.GetDBConnection()
+	n.UpdatedAt = time.Now()
 
-	_, err := db.Collection("Songs").UpdateOne(context.TODO(), bson.M{
-		"_id": n.ID,
-	}, bson.M{
-		"$set": bson.M{
-			"songbook_id":   n.SongbookID,
-			"categories_id": n.CategoriesID,
-			"title":         n.Title,
-			"chords":        n.Chords,
-			"author":        n.Author,
-			"youtube_link":  n.YouTubeLink,
-			"description":   n.Description,
-			"bible_verse":   n.BibleVerse,
-			"number":        n.Number,
-			"text":          n.Text,
-			"updated_at":    time.Now(),
-		},
-	})
+	originalSong, err := n.GetSongByID(n.ID)
 	if err != nil {
 		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	originalSong.replaceFile(n, "music_sheet", "AWS_S3_MUSIC_SHEET_BUCKET")
+	originalSong.replaceFile(n, "music", "AWS_S3_MUSIC_BUCKET")
+	originalSong.replaceFile(n, "music_only", "AWS_S3_MUSIC_ONLY_BUCKET")
+	originalSong.replaceFile(n, "voices_all", "AWS_S3_VOICES_BUCKET")
+	originalSong.replaceFile(n, "voices_soprano", "AWS_S3_VOICES_BUCKET")
+	originalSong.replaceFile(n, "voices_contralto", "AWS_S3_VOICES_BUCKET")
+	originalSong.replaceFile(n, "voices_tenor", "AWS_S3_VOICES_BUCKET")
+	originalSong.replaceFile(n, "voices_bass", "AWS_S3_VOICES_BUCKET")
 
-	return nil
-}
+	db.Exec("DELETE FROM song_categories WHERE song_id = ?", n.ID)
 
-func (n *Song) DeleteSong() error {
-	db := mongodb.GetMongoDBConnection()
-
-	// Delete current music sheet
-	err := n.DeleteFileByID(n.Music, db, context.TODO())
-	if err != nil {
-		return err
-	}
-
-	// Delete current music only
-	err = n.DeleteFileByID(n.MusicOnly, db, context.TODO())
-	if err != nil {
-		return err
-	}
-
-	// Delete current music
-	err = n.DeleteFileByID(n.MusicSheet, db, context.TODO())
-	if err != nil {
-		return err
-	}
-
-	// Delete voices
-	for _, item := range n.Voices {
-		err = n.DeleteFileByID(item.File, db, context.TODO())
+	for _, categoryID := range n.CategoriesID {
+		_, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
+			n.ID, categoryID, time.Now(), time.Now())
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = db.Collection("Songs").DeleteOne(context.TODO(), bson.M{"_id": n.ID})
+	_, err = db.Exec("UPDATE songs SET title = ?, lyrics = ?, youtube_url = ?, description = ?, number = ?, songbook_id = ?, transpose = ?, scroll_speed = ?, updated_at = ? WHERE id = ?",
+		n.Title, n.Lyrics, n.YouTubeURL, n.Description, n.Number, n.SongbookID, n.Transpose, n.ScrollSpeed, n.UpdatedAt, n.ID)
 	if err != nil {
 		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (n *Song) CreateSong() error {
-	db := mongodb.GetMongoDBConnection()
+func (n *Song) deleteS3Files() error {
+	// Delete music sheet file if it exists
+	if n.MusicSheet != nil {
+		filename := helpers.GetFilenameFromPath(*n.MusicSheet)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_MUSIC_SHEET_BUCKET")); err != nil {
+			return err
+		}
+	}
 
-	n.ID = primitive.NewObjectID()
+	// Delete music file if it exists
+	if n.Music != nil {
+		filename := helpers.GetFilenameFromPath(*n.Music)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_MUSIC_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	// Delete music only file if it exists
+	if n.MusicOnly != nil {
+		filename := helpers.GetFilenameFromPath(*n.MusicOnly)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_MUSIC_ONLY_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	// Delete voices files if they exist
+	if n.VoicesAll != nil {
+		filename := helpers.GetFilenameFromPath(*n.VoicesAll)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_VOICES_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	if n.VoicesSoprano != nil {
+		filename := helpers.GetFilenameFromPath(*n.VoicesSoprano)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_VOICES_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	if n.VoicesContralto != nil {
+		filename := helpers.GetFilenameFromPath(*n.VoicesContralto)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_VOICES_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	if n.VoicesTenor != nil {
+		filename := helpers.GetFilenameFromPath(*n.VoicesTenor)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_VOICES_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	if n.VoicesBass != nil {
+		filename := helpers.GetFilenameFromPath(*n.VoicesBass)
+		if err := aws.S3DeleteFile(filename, os.Getenv("AWS_S3_VOICES_BUCKET")); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (n *Song) DeleteSong() error {
+	db := sqlite.GetDBConnection()
+
+	err := n.deleteS3Files()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("DELETE FROM song_categories WHERE song_id = ?", n.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("DELETE FROM songs WHERE id = ?", n.ID)
+	if err != nil {
+		return err
+	}
+
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *SongCategory) AddSongToCategory() error {
+	db := sqlite.GetDBConnection()
+
 	n.CreatedAt = time.Now()
 	n.UpdatedAt = time.Now()
 
-	_, err := db.Collection("Songs").InsertOne(context.TODO(), n)
+	result, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
+		n.SongID, n.CategoryID, n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	n.ID = int(id)
 
 	return nil
 }
 
-func GetFileDuration(path string) float64 {
-	t := 0.0
+func (n *SongCategory) RemoveSongFromCategory() error {
+	db := sqlite.GetDBConnection()
 
-	r, err := os.Open(path)
+	_, err := db.Exec("DELETE FROM song_categories WHERE song_id = ? AND category_id = ?", n.SongID, n.CategoryID)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	d := mp3.NewDecoder(r)
-	var f mp3.Frame
-	skipped := 0
-
-	for {
-		if err := d.Decode(&f, &skipped); err != nil {
-			if err == io.EOF {
-				break
-			}
-			panic(err)
-		}
-
-		t = t + f.Duration().Seconds()
-	}
-
-	return t
+	return nil
 }
 
-func CleanUpSongTemp(song map[string]interface{}) {
-	files := []string{"music_sheet_path",
-		"music_audio_path",
-		"music_audio_only_path",
-		"soprano_voice_audio_path",
-		"contralto_voice_audio_path",
-		"tenor_voice_audio_path",
-		"bass_voice_audio_path",
-		"all_voice_audio_path",
+func GetSongsByCategoryID(categoryID int) ([]Song, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query(`
+		SELECT s.id, s.title, s.number, s.created_at, s.updated_at 
+		FROM songs s 
+		JOIN song_categories sc ON s.id = sc.song_id 
+		WHERE sc.category_id = ?`, categoryID)
+	if err != nil {
+		return []Song{}, err
 	}
-	for _, file := range files {
-		if song[file] != nil {
-			value := song[file].(string)
-			os.Remove(value)
+	defer rows.Close()
+
+	result := []Song{}
+	for rows.Next() {
+		elem := Song{}
+
+		err := rows.Scan(&elem.ID, &elem.Title, &elem.Number, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
 		}
+		result = append(result, elem)
 	}
+
+	return result, nil
+}
+
+func GetSongsBySongbookID(songbookID int) ([]Song, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, title, number, created_at, updated_at FROM songs WHERE songbook_id = ?", songbookID)
+	if err != nil {
+		return []Song{}, err
+	}
+	defer rows.Close()
+
+	result := []Song{}
+	for rows.Next() {
+		elem := Song{}
+		err := rows.Scan(&elem.ID, &elem.Title, &elem.Number, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			panic(err)
+		}
+		result = append(result, elem)
+	}
+
+	return result, nil
 }

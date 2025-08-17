@@ -1,237 +1,267 @@
 package models
 
 import (
-	"context"
-	"fmt"
-	"sync"
+	"time"
 
-	"github.com/BenjaminRA/himnario-backend/db/mongodb"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 )
 
 type Category struct {
-	ID         primitive.ObjectID   `json:"_id" bson:"_id"`
-	All        bool                 `json:"all" bson:"all"`
-	Category   string               `json:"category" bson:"category"`
-	SongbookID primitive.ObjectID   `json:"songbook_id" bson:"songbook_id"`
-	ParentID   primitive.ObjectID   `json:"parent_id,omitempty" bson:"parent_id,omitempty"`
-	ChildrenID []primitive.ObjectID `json:"children_id,omitempty" bson:"children_id,omitempty"`
-	Children   []Category           `json:"children,omitempty" bson:"children,omitempty"`
-	Songs      []Song               `json:"songs,omitempty" bson:"songs,omitempty"`
+	ID               int        `json:"id"`
+	Name             string     `json:"name"`
+	ParentCategoryID *int       `json:"parent_category_id"`
+	Parent           *Category  `json:"parent"`   // Not in database, but used in API responses
+	Children         []Category `json:"children"` // Not in database, but used in API responses
+	Songs            []Song     `json:"songs"`    // Not in database, but used in API responses
+	SongbookID       *int       `json:"songbook_id"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+
+	SongCount int `json:"song_count"` // Not in database, but used in API responses
+}
+
+func (n *Category) songbookUpdatedAt() error {
+	db := sqlite.GetDBConnection()
+	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now(), n.SongbookID)
+	return err
 }
 
 func (n *Category) GetAllCategories() ([]Category, error) {
-	db := mongodb.GetMongoDBConnection()
-
-	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
-		{"$match": bson.M{"parent_id": primitive.Null{}}},
-	})
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE parent_category_id IS NULL")
 	if err != nil {
 		return []Category{}, err
 	}
+	defer rows.Close()
 
 	result := []Category{}
-
-	var wg sync.WaitGroup
-	for cursor.Next(context.TODO()) {
+	for rows.Next() {
 		elem := Category{}
-		cursor.Decode(&elem)
-		if elem.ID.Hex() != "000000000000000000000000" {
-			wg.Add(1)
-			elem.Children = elem.GetChildren()
-			wg.Done()
+		err := rows.Scan(&elem.ID, &elem.Name, &elem.ParentCategoryID, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
+
+		// Load children recursively
+		children, err := elem.loadChildrenRecursive()
+		if err == nil {
+			elem.Children = children
 		}
 
 		result = append(result, elem)
 	}
-	wg.Wait()
 
 	return result, nil
 }
 
-func (n *Category) GetCategoryById(id string) (Category, error) {
-	db := mongodb.GetMongoDBConnection()
-	object_id, err := primitive.ObjectIDFromHex(id)
+func (n *Category) GetCategoriesBySongbookID(songbookID int) ([]Category, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE parent_category_id IS NULL AND songbook_id = ? ORDER BY name ASC", songbookID)
 	if err != nil {
-		return Category{}, err
+		return []Category{}, err
 	}
-
-	cursor, err := db.Collection("Categories").Aggregate(context.TODO(), []bson.M{
-		{"$match": bson.M{"_id": object_id}},
-		{"$lookup": bson.M{
-			"from":         "Songs",
-			"localField":   "_id",
-			"foreignField": "categories_id",
-			"pipeline": []bson.M{
-				{
-					"$sort": bson.M{
-						"number": 1,
-					},
-				},
-			},
-			"as": "songs",
-		}},
-	})
-	if err != nil {
-		return Category{}, err
-	}
+	defer rows.Close()
 
 	result := []Category{}
-
-	for cursor.Next(context.TODO()) {
+	for rows.Next() {
 		elem := Category{}
-		cursor.Decode(&elem)
+		err := rows.Scan(&elem.ID, &elem.Name, &elem.ParentCategoryID, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
 
-		if elem.ID.Hex() != "000000000000000000000000" {
-			elem.Children = elem.GetChildren()
+		// Load children recursively
+		children, err := elem.loadChildrenRecursive()
+		if err == nil {
+			elem.Children = children
+		}
+
+		elem.SongCount = 0
+
+		count, err := db.Query("SELECT COUNT(*) FROM song_categories WHERE category_id = ?", elem.ID)
+		if err == nil {
+			defer count.Close()
+			if count.Next() {
+				count.Scan(&elem.SongCount)
+			}
 		}
 
 		result = append(result, elem)
 	}
 
-	if len(result) == 0 {
-		return Category{}, fmt.Errorf("Category not found")
-	}
-
-	return result[0], nil
+	return result, nil
 }
 
-func (n *Category) GetChildren() []Category {
-	db := mongodb.GetMongoDBConnection()
-
-	cursor, err := db.Collection("Categories").Find(context.TODO(), bson.M{
-		"parent_id": n.ID,
-	})
+func (n *Category) GetCategoryById(id int) (Category, error) {
+	db := sqlite.GetDBConnection()
+	var result Category
+	err := db.QueryRow("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE id = ?", id).Scan(
+		&result.ID, &result.Name, &result.ParentCategoryID, &result.SongbookID, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
-		panic(err)
+		return Category{}, err
 	}
+
+	// Load parent if it exists
+	if result.ParentCategoryID != nil {
+		parent, err := result.loadParent()
+		if err == nil {
+			result.Parent = parent
+		}
+	}
+
+	// Load children recursively
+	children, err := result.loadChildrenRecursive()
+	if err == nil {
+		result.Children = children
+	}
+
+	return result, nil
+}
+
+func (n *Category) GetChildren() ([]Category, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE parent_category_id = ?", n.ID)
+	if err != nil {
+		return []Category{}, err
+	}
+	defer rows.Close()
 
 	result := []Category{}
-
-	wg := sync.WaitGroup{}
-
-	for cursor.Next(context.TODO()) {
-		wg.Add(1)
-
+	for rows.Next() {
 		elem := Category{}
-		cursor.Decode(&elem)
-
-		if elem.ID.Hex() != "000000000000000000000000" {
-			elem.Children = elem.GetChildren()
+		err := rows.Scan(&elem.ID, &elem.Name, &elem.ParentCategoryID, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
 		}
-
 		result = append(result, elem)
-
-		wg.Done()
 	}
 
-	wg.Wait()
-
-	return result
+	return result, nil
 }
 
 func (n *Category) CreateCategory() error {
-	db := mongodb.GetMongoDBConnection()
-	n.ID = primitive.NewObjectID()
+	db := sqlite.GetDBConnection()
 
-	_, err := db.Collection("Categories").InsertOne(context.TODO(), n)
+	n.CreatedAt = time.Now()
+	n.UpdatedAt = time.Now()
+
+	result, err := db.Exec("INSERT INTO categories (name, parent_category_id, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+		n.Name, n.ParentCategoryID, n.SongbookID, n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	n.ID = int(id)
+
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (n *Category) UpdateCategory() error {
-	db := mongodb.GetMongoDBConnection()
+	db := sqlite.GetDBConnection()
+	n.UpdatedAt = time.Now()
 
-	update := bson.M{
-		"$set": bson.M{
-			"category": n.Category,
-		},
-	}
-	if n.ParentID.Hex() == "000000000000000000000000" {
-		update["$unset"] = bson.M{
-			"parent_id": "",
-		}
-	} else {
-		update["$set"].(bson.M)["parent_id"] = n.ParentID
-	}
-
-	_, err := db.Collection("Categories").UpdateOne(context.TODO(), bson.M{
-		"_id": n.ID,
-	}, update)
+	_, err := db.Exec("UPDATE categories SET name = ?, parent_category_id = ?, updated_at = ? WHERE id = ?",
+		n.Name, n.ParentCategoryID, n.UpdatedAt, n.ID)
 	if err != nil {
-		return (err)
+		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (n *Category) DeleteCategory() error {
-	db := mongodb.GetMongoDBConnection()
+	db := sqlite.GetDBConnection()
 
-	n.Children = n.GetChildren()
-
-	if len(n.Children) > 0 {
-		n.deleteAllChildren()
-	}
-
-	_, err := db.Collection("Categories").DeleteOne(context.TODO(), bson.M{
-		"_id": n.ID,
-	})
-
+	// Delete related records first
+	_, err := db.Exec("DELETE FROM song_categories WHERE category_id = ?", n.ID)
 	if err != nil {
-		return (err)
+		return err
 	}
 
-	// Deleting category from songs
-	_, err = db.Collection("Songs").UpdateMany(context.TODO(), bson.M{
-		"categories_id": n.ID,
-	}, bson.M{
-		"$pull": bson.M{
-			"categories_id": n.ID,
-		},
-	})
-
+	_, err = db.Exec("UPDATE categories SET parent_category_id = ? WHERE parent_category_id = ?", n.ParentCategoryID, n.ID)
 	if err != nil {
-		return (err)
+		return err
 	}
 
-	SetSongbookVerificationStatus(n.SongbookID.Hex(), false, true, false)
+	_, err = db.Exec("DELETE FROM categories WHERE id = ?", n.ID)
+	if err != nil {
+		return err
+	}
+
+	// Update songbook updated_at field
+	if err := n.songbookUpdatedAt(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (n *Category) deleteAllChildren() {
-	for _, child := range n.Children {
-		child.Children = child.GetChildren()
-		if len(child.Children) > 0 {
-			child.deleteAllChildren()
-		}
-
-		child.DeleteCategory()
+// loadParent loads the parent category
+func (n *Category) loadParent() (*Category, error) {
+	if n.ParentCategoryID == nil {
+		return nil, nil
 	}
+
+	db := sqlite.GetDBConnection()
+	parent := &Category{}
+	err := db.QueryRow("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE id = ?", *n.ParentCategoryID).Scan(
+		&parent.ID, &parent.Name, &parent.ParentCategoryID, &parent.SongbookID, &parent.CreatedAt, &parent.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return parent, nil
 }
 
-func AllToFirst(t *[]Category) {
-	todo_idx := -1
+// loadChildrenRecursive loads all children categories recursively
+func (n *Category) loadChildrenRecursive() ([]Category, error) {
+	db := sqlite.GetDBConnection()
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE parent_category_id = ? ORDER BY name ASC", n.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	for i, value := range *t {
-		if value.All {
-			todo_idx = i
-			break
+	var children []Category
+	for rows.Next() {
+		child := Category{}
+		err := rows.Scan(&child.ID, &child.Name, &child.ParentCategoryID, &child.SongbookID, &child.CreatedAt, &child.UpdatedAt)
+		if err != nil {
+			continue
 		}
+
+		child.SongCount = 0
+
+		count, err := db.Query("SELECT COUNT(*) FROM song_categories WHERE category_id = ?", child.ID)
+		if err == nil {
+			defer count.Close()
+			if count.Next() {
+				count.Scan(&child.SongCount)
+			}
+		}
+
+		// Recursively load children of this child
+		grandChildren, err := child.loadChildrenRecursive()
+		if err == nil {
+			child.Children = grandChildren
+		}
+
+		children = append(children, child)
 	}
 
-	if todo_idx != -1 {
-		for i := todo_idx; i > 0; i-- {
-			(*t)[i], (*t)[i-1] = (*t)[i-1], (*t)[i]
-		}
-	}
+	return children, nil
 }

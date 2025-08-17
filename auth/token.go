@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	redisdb "github.com/BenjaminRA/himnario-backend/db/redis"
+	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -39,7 +39,7 @@ func CreateToken(user models.User) (TokenDetails, error) {
 
 	// Creating Access Token
 	tokenClaims := jwt.MapClaims{}
-	tokenClaims["user_id"] = user.ID.Hex()
+	tokenClaims["user_id"] = user.ID
 	tokenClaims["verified"] = user.Verified
 	tokenClaims["access_uuid"] = tokenDetails.AccessUUID
 	tokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
@@ -54,7 +54,7 @@ func CreateToken(user models.User) (TokenDetails, error) {
 
 	// Creating Refresh Token
 	tokenClaims = jwt.MapClaims{}
-	tokenClaims["user_id"] = user.ID.Hex()
+	tokenClaims["user_id"] = user.ID
 	tokenClaims["verified"] = user.Verified
 	tokenClaims["refresh_uuid"] = tokenDetails.RefreshUUID
 	tokenClaims["exp"] = time.Now().Add(time.Hour * 48).Unix()
@@ -68,9 +68,13 @@ func CreateToken(user models.User) (TokenDetails, error) {
 	tokenDetails.RefreshToken = refresh_token
 
 	// Saving token in redis
-	client := redisdb.GetRedisConnection()
-	client.Set(tokenDetails.AccessUUID, user.ID.Hex(), time.Until(time.Unix(tokenDetails.AtExp, 0)))
-	client.Set(tokenDetails.RefreshUUID, user.ID.Hex(), time.Until(time.Unix(tokenDetails.RtExp, 0)))
+	// client := redisdb.GetRedisConnection()
+	// client.Set(tokenDetails.AccessUUID, user.ID, time.Until(time.Unix(tokenDetails.AtExp, 0)))
+	// client.Set(tokenDetails.RefreshUUID, user.ID, time.Until(time.Unix(tokenDetails.RtExp, 0)))
+
+	db := sqlite.GetDBConnection()
+	db.Exec("INSERT OR REPLACE INTO session_tokens (access_uuid, refresh_uuid, user_id, at_exp, rt_exp) VALUES (?, ?, ?, ?, ?)",
+		tokenDetails.AccessUUID, tokenDetails.RefreshUUID, user.ID, tokenDetails.AtExp, tokenDetails.RtExp)
 
 	return tokenDetails, nil
 }
@@ -94,7 +98,7 @@ func RetrieveUser(c *gin.Context) (models.User, error) {
 	}
 
 	sessionTokenClaims := sessionToken.Claims.(jwt.MapClaims)
-	user_id := sessionTokenClaims["user_id"].(string)
+	user_id := int(sessionTokenClaims["user_id"].(float64))
 
 	user, err := new(models.User).GetUserById(user_id)
 	if err != nil {

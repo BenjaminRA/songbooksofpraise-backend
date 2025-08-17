@@ -1,57 +1,116 @@
-package handlers
+package songs
 
 import (
 	"net/http"
+	"strconv"
 
-	"github.com/BenjaminRA/himnario-backend/models"
+	models "github.com/BenjaminRA/himnario-backend/models"
 	"github.com/gin-gonic/gin"
 )
 
-func GetMusicSheet(c *gin.Context) {
-	id := c.Param("id")
-	data, filename, err := new(models.Song).GetMusicSheet(id)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, err)
+func GetSongByID(c *gin.Context) {
+	songIDStr := c.Param("song_id")
+
+	if songIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Song ID is required"})
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
+	songID, err := strconv.Atoi(songIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID format"})
+		return
+	}
+
+	song, err := (&models.Song{}).GetSongByID(songID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Song not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"song": song,
+	})
 }
 
-func GetMusic(c *gin.Context) {
-	id := c.Param("id")
-	data, filename, err := new(models.Song).GetMusic(id)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, err)
+func UpdateSong(c *gin.Context) {
+	songIDStr := c.Param("song_id")
+
+	if songIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Song ID is required"})
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
+	songID, err := strconv.Atoi(songIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID format"})
+		return
+	}
+
+	var updatedSong models.Song
+	if err := c.ShouldBindJSON(&updatedSong); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		return
+	}
+
+	// Ensure the ID from the URL is used
+	updatedSong.ID = songID
+
+	if err := updatedSong.UpdateSong(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update song"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Song updated successfully",
+		"song":    updatedSong,
+	})
 }
 
-func GetMusicOnly(c *gin.Context) {
-	id := c.Param("id")
-	data, filename, err := new(models.Song).GetMusicOnly(id)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, err)
+func CreateSong(c *gin.Context) {
+	var newSong models.Song
+	if err := c.ShouldBindJSON(&newSong); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
+	if err := newSong.CreateSong(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create song: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Song created successfully",
+		"song":    newSong,
+	})
 }
 
-func GetVoicesByVoice(c *gin.Context) {
-	id := c.Param("id")
-	voice := c.Param("voice")
-	data, filename, err := new(models.Song).GetVoice(id, voice)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, err)
+func DeleteSong(c *gin.Context) {
+	songIDStr := c.Param("song_id")
+
+	if songIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Song ID is required"})
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Data(http.StatusOK, "application/octet-stream", data)
+	songID, err := strconv.Atoi(songIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID format"})
+		return
+	}
+
+	song, err := (&models.Song{}).GetSongByID(songID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Song not found"})
+		return
+	}
+
+	if err := song.DeleteSong(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete song: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Song deleted successfully",
+	})
 }

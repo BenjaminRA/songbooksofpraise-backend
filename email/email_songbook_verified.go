@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SendSongbookVerifiedEmail(c *gin.Context, songbook_id string) error {
+func SendSongbookVerifiedEmail(c *gin.Context, songbook_id int) error {
 	lang := c.Request.Context().Value("language").(string)
 
-	songbook, err := new(models.Songbook).GetSongbookByID(songbook_id, "EN")
+	songbook, err := new(models.Songbook).GetSongbookByID(songbook_id)
 	if err != nil {
 		return err
 	}
 
-	user, err := new(models.User).GetUserById(songbook.OwnerID.Hex())
+	user, err := new(models.User).GetUserById(songbook.OwnerID)
 	if err != nil {
 		return err
 	}
@@ -30,9 +30,20 @@ func SendSongbookVerifiedEmail(c *gin.Context, songbook_id string) error {
 		return err
 	}
 
-	for _, email := range songbook.Editors {
+	// Get songbook editors
+	editors, err := models.GetSongbookEditors(songbook.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, editor := range editors {
+		editorUser, err := new(models.User).GetUserById(editor.UserID)
+		if err != nil {
+			continue
+		}
+
 		err = SendEmail(
-			email,
+			editorUser.Email,
 			locale.GetLocalizedMessage(lang, "email.songbook.verified.subject"),
 			fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.songbook.verified.content"), songbook.Title),
 		)

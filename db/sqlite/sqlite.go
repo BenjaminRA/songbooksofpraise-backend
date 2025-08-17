@@ -1,6 +1,10 @@
 package sqlite
 
-import "database/sql"
+import (
+	"database/sql"
+
+	_ "github.com/mattn/go-sqlite3"
+)
 
 var db *sql.DB
 
@@ -9,7 +13,7 @@ func GetDBConnection() *sql.DB {
 		return db
 	}
 	var err error
-	db, err = sql.Open("sqlite3", "himnos_coros.sqlite")
+	db, err = sql.Open("sqlite3", "songbooks_of_praise.sqlite")
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,52 @@
+2025-08-03 21:42:11,750 - INFO - Source database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/himnos_coros.sqlite
+2025-08-03 21:42:11,750 - INFO - Target database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/songbooks_of_praise.sqlite
+2025-08-03 21:42:11,750 - INFO - Starting database migration...
+2025-08-03 21:42:11,752 - INFO - Removed existing target database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/songbooks_of_praise.sqlite
+2025-08-03 21:42:11,753 - INFO - Successfully connected to databases
+2025-08-03 21:42:11,756 - INFO - Successfully created new database schema
+2025-08-03 21:42:11,757 - INFO - Created admin user with ID: 1
+2025-08-03 21:42:11,757 - INFO - Created 'Himnos y Cánticos del Evangelio' songbook with ID: 1
+2025-08-03 21:42:11,757 - INFO - Created 'Coros' songbook with ID: 2
+2025-08-03 21:42:11,757 - INFO - Migrated 5 top-level categories
+2025-08-03 21:42:11,757 - INFO - Migrated 37 subcategories
+2025-08-03 21:42:11,795 - INFO - Migrated 682 songs
+2025-08-03 21:42:11,798 - INFO - Migrated 599 tema-song relationships
+2025-08-03 21:42:11,799 - INFO - Migrated 484 sub-tema-song relationships
+2025-08-03 21:42:11,799 - INFO - Table users: 1 records
+2025-08-03 21:42:11,799 - INFO - Table songbooks: 2 records
+2025-08-03 21:42:11,799 - INFO - Table categories: 42 records
+2025-08-03 21:42:11,799 - INFO - Table songs: 682 records
+2025-08-03 21:42:11,799 - INFO - Table song_categories: 1083 records
+2025-08-03 21:42:11,800 - INFO - Admin user created: Benjamín Rodríguez
+2025-08-03 21:42:11,800 - INFO - Songbooks created: ['Himnos y Cánticos del Evangelio', 'Coros']
+2025-08-03 21:42:11,800 - INFO - Songbook 'Himnos y Cánticos del Evangelio': 517 songs
+2025-08-03 21:42:11,800 - INFO - Songbook 'Coros': 165 songs
+2025-08-03 21:42:11,800 - INFO - Migration verification completed successfully
+2025-08-03 21:42:11,800 - INFO - Database migration completed successfully!
+2025-08-03 21:42:11,801 - INFO - Database connections closed
+2025-08-03 21:58:15,399 - INFO - Source database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/himnos_coros.sqlite
+2025-08-03 21:58:15,399 - INFO - Target database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/songbooks_of_praise.sqlite
+2025-08-03 21:58:15,399 - INFO - Starting database migration...
+2025-08-03 21:58:15,401 - INFO - Removed existing target database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise-backend/songbooks_of_praise.sqlite
+2025-08-03 21:58:15,401 - INFO - Successfully connected to databases
+2025-08-03 21:58:15,404 - INFO - Successfully created new database schema
+2025-08-03 21:58:15,404 - INFO - Created admin user with ID: 1
+2025-08-03 21:58:15,404 - INFO - Created 'Himnos y Cánticos del Evangelio' songbook with ID: 1
+2025-08-03 21:58:15,404 - INFO - Created 'Coros' songbook with ID: 2
+2025-08-03 21:58:15,404 - INFO - Migrated 5 top-level categories
+2025-08-03 21:58:15,405 - INFO - Migrated 37 subcategories
+2025-08-03 21:58:15,449 - INFO - Migrated 682 songs
+2025-08-03 21:58:15,451 - INFO - Migrated 599 tema-song relationships
+2025-08-03 21:58:15,453 - INFO - Migrated 484 sub-tema-song relationships
+2025-08-03 21:58:15,454 - INFO - Table users: 1 records
+2025-08-03 21:58:15,454 - INFO - Table songbooks: 2 records
+2025-08-03 21:58:15,454 - INFO - Table categories: 42 records
+2025-08-03 21:58:15,454 - INFO - Table songs: 682 records
+2025-08-03 21:58:15,454 - INFO - Table song_categories: 1083 records
+2025-08-03 21:58:15,454 - INFO - Admin user created: Benjamín Rodríguez
+2025-08-03 21:58:15,454 - INFO - Songbooks created: ['Himnos y Cánticos del Evangelio', 'Coros']
+2025-08-03 21:58:15,454 - INFO - Songbook 'Himnos y Cánticos del Evangelio': 517 songs
+2025-08-03 21:58:15,454 - INFO - Songbook 'Coros': 165 songs
+2025-08-03 21:58:15,454 - INFO - Migration verification completed successfully
+2025-08-03 21:58:15,454 - INFO - Database migration completed successfully!
+2025-08-03 21:58:15,454 - INFO - Database connections closed

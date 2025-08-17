@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SendSongbookToVerifiedEmail(c *gin.Context, songbook_id string) error {
+func SendSongbookToVerifiedEmail(c *gin.Context, songbook_id int) error {
 	lang := c.Request.Context().Value("language").(string)
 
-	songbook, err := new(models.Songbook).GetSongbookByID(songbook_id, "EN")
+	songbook, err := new(models.Songbook).GetSongbookByID(songbook_id)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/BenjaminRA/himnario-backend/auth"
 	"github.com/BenjaminRA/himnario-backend/locale"
@@ -10,6 +11,19 @@ import (
 
 func CheckAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if strings.Contains(c.Request.URL.Path, "/app") {
+			// Check for app-specific authentication
+			if err := auth.ValidateAppToken(c.Request.Header.Get("X-API-Token")); err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+
+			c.Next()
+			return
+		}
+
 		if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/register" || c.Request.URL.Path == "/auth/verification" {
 			c.Next()
 			return

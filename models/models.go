@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/BenjaminRA/himnario-backend/db/sqlite"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Parrafo struct {
@@ -15,11 +14,10 @@ type Parrafo struct {
 }
 
 type Tema struct {
-	ID         int                `json:"id"`
-	Tema       string             `json:"tema"`
-	InsertedID primitive.ObjectID `json:"_id"`
-	Himnos     []Himno
-	SubTemas   []Tema
+	ID       int    `json:"id"`
+	Tema     string `json:"tema"`
+	Himnos   []Himno
+	SubTemas []Tema
 }
 
 type Himno struct {
@@ -35,7 +33,6 @@ func (n *Himno) GetHimnos() ([]Himno, error) {
 	// Ejecutamos la query
 	rows, err := db.Query(q)
 	if err != nil {
-		panic(err)
 		return []Himno{}, err
 	}
 

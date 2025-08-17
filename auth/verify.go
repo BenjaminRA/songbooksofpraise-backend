@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	redisdb "github.com/BenjaminRA/himnario-backend/db/redis"
+	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 	"github.com/BenjaminRA/himnario-backend/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -31,11 +31,13 @@ func VerifyToken(c *gin.Context) error {
 
 		if !expiredSessionToken {
 			sessionTokenClaims := sessionToken.Claims.(jwt.MapClaims)
-			redisdb := redisdb.GetRedisConnection()
-			result := redisdb.Get(sessionTokenClaims["access_uuid"].(string))
+			db := sqlite.GetDBConnection()
 
-			// Token belongs to different user
-			if result.Err() == nil && result.Val() != sessionTokenClaims["user_id"] {
+			var stored_user_id int
+			err := db.QueryRow("SELECT user_id FROM session_tokens WHERE access_uuid = ?", sessionTokenClaims["access_uuid"].(string)).Scan(&stored_user_id)
+
+			// Token belongs to different user or doesn't exist
+			if err != nil || stored_user_id != int(sessionTokenClaims["user_id"].(float64)) {
 				return fmt.Errorf("session_token.invalid")
 			}
 		}
@@ -62,20 +64,21 @@ func VerifyToken(c *gin.Context) error {
 
 		refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
 
-		redisdb := redisdb.GetRedisConnection()
-		result := redisdb.Get(refreshTokenClaims["refresh_uuid"].(string))
+		db := sqlite.GetDBConnection()
+		var stored_user_id int
+		err = db.QueryRow("SELECT user_id FROM session_tokens WHERE refresh_uuid = ?", refreshTokenClaims["refresh_uuid"].(string)).Scan(&stored_user_id)
 
-		// Refresh Token Expired
-		if result.Err() != nil {
+		// Refresh Token Expired or doesn't exist
+		if err != nil {
 			return fmt.Errorf("refresh_token.expired")
 		}
 
 		// Token belongs to different user
-		if result.Val() != refreshTokenClaims["user_id"] {
+		if stored_user_id != int(refreshTokenClaims["user_id"].(float64)) {
 			return fmt.Errorf("session_token.missing")
 		}
 
-		user, err := new(models.User).GetUserById(result.Val())
+		user, err := new(models.User).GetUserById(stored_user_id)
 		if err != nil {
 			return fmt.Errorf("refresh_token.invalid")
 		}
