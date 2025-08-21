@@ -24,7 +24,7 @@ func CheckAuthentication() gin.HandlerFunc {
 			return
 		}
 
-		if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/register" || c.Request.URL.Path == "/auth/verification" {
+		if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/register" || c.Request.URL.Path == "/auth/verification" || c.Request.URL.Path == "/health" {
 			c.Next()
 			return
 		}

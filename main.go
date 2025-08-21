@@ -48,9 +48,26 @@ func main() {
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://admin:3000"},
-		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "DELETE"},
-		AllowHeaders:     []string{"Content-Type", "Accept-Language"},
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://admin:3000",
+			"https://admin.songbooksofpraise.com",
+			"https://backend.songbooksofpraise.com",
+			"https://songbooksofpraise.com",
+			"https://www.songbooksofpraise.com",
+		},
+		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{
+			"Content-Type",
+			"Accept-Language",
+			"Authorization",
+			"X-API-Token",
+			"Accept",
+			"Origin",
+			"X-Requested-With",
+			"Cache-Control",
+			"Cookie",
+		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -79,6 +96,14 @@ func main() {
 		})
 		c.Abort() // Stop further processing of the request
 	}))
+
+	// Health check endpoint (ADD THIS)
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":    "ok",
+			"timestamp": time.Now().Unix(),
+		})
+	})
 
 	router.POST("/files", files_handler.PostFile)
 

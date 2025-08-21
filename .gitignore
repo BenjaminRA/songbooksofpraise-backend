@@ -3,3 +3,5 @@ assets
 tmp
 .env
 .vscode
+backend.songbooksofpraise.com.conf
+songbooks_of_praise.sqlite

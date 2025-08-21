@@ -2,7 +2,7 @@ package auth
 
 import (
 	"fmt"
-	"math"
+	"net/http"
 	"os"
 	"time"
 
@@ -23,13 +23,68 @@ type TokenDetails struct {
 }
 
 func (n *TokenDetails) SendToken(c *gin.Context) {
-	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("SessionToken=%s; SameSite=none; Max-Age=%v; Path=/; Secure; HttpOnly", n.AccessToken, math.Floor(time.Until(time.Unix(n.AtExp, 0)).Seconds())))
-	c.Writer.Header().Add("Set-Cookie", fmt.Sprintf("RefreshToken=%s; SameSite=none; Max-Age=%v; Path=/; Secure; HttpOnly", n.RefreshToken, math.Floor(time.Until(time.Unix(n.RtExp, 0)).Seconds())))
+	// Calculate max age in seconds
+	accessMaxAge := int(time.Until(time.Unix(n.AtExp, 0)).Seconds())
+	refreshMaxAge := int(time.Until(time.Unix(n.RtExp, 0)).Seconds())
+
+	// Ensure max age is not negative
+	if accessMaxAge < 0 {
+		accessMaxAge = 0
+	}
+	if refreshMaxAge < 0 {
+		refreshMaxAge = 0
+	}
+
+	// Set Session Token cookie using Gin's method
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(
+		"SessionToken", // name
+		n.AccessToken,  // value
+		accessMaxAge,   // maxAge in seconds
+		"/",            // path
+		// "",             // domain (empty means current domain)
+		".songbooksofpraise.com", // domain (empty means current domain)
+		true,                     // secure (HTTPS only)
+		true,                     // httpOnly
+	)
+
+	// Set Refresh Token cookie
+	c.SetCookie(
+		"RefreshToken", // name
+		n.RefreshToken, // value
+		refreshMaxAge,  // maxAge in seconds
+		"/",            // path
+		// "",             // domain
+		".songbooksofpraise.com", // domain
+		true,                     // secure
+		true,                     // httpOnly
+	)
 }
 
 func UnsetToken(c *gin.Context) {
-	c.Writer.Header().Add("Set-Cookie", "SessionToken=; SameSite=none; Max-Age=0; Path=/; Secure; HttpOnly")
-	c.Writer.Header().Add("Set-Cookie", "RefreshToken=; SameSite=none; Max-Age=0; Path=/; Secure; HttpOnly")
+	c.SetSameSite(http.SameSiteLaxMode)
+
+	// Unset Session Token
+	c.SetCookie(
+		"SessionToken",
+		"",
+		-1, // negative maxAge deletes the cookie
+		"/",
+		"",
+		true,
+		true,
+	)
+
+	// Unset Refresh Token
+	c.SetCookie(
+		"RefreshToken",
+		"",
+		-1,
+		"/",
+		"",
+		true,
+		true,
+	)
 }
 
 func CreateToken(user models.User) (TokenDetails, error) {
