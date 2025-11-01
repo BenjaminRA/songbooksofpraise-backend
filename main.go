@@ -12,6 +12,7 @@ import (
 	app_songs_handler "github.com/BenjaminRA/himnario-backend/handlers/app/songs"
 	auth_handler "github.com/BenjaminRA/himnario-backend/handlers/auth"
 	categories_handler "github.com/BenjaminRA/himnario-backend/handlers/categories"
+	churches_handler "github.com/BenjaminRA/himnario-backend/handlers/churches"
 	files_handler "github.com/BenjaminRA/himnario-backend/handlers/files"
 	songbooks_handler "github.com/BenjaminRA/himnario-backend/handlers/songbooks"
 	songs_handler "github.com/BenjaminRA/himnario-backend/handlers/songs"
@@ -101,7 +102,7 @@ func main() {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":    "ok",
-			"timestamp": time.Now().Unix(),
+			"timestamp": time.Now().UTC().Unix(),
 		})
 	})
 
@@ -140,6 +141,43 @@ func main() {
 	router.PUT("/songs/:song_id", songs_handler.UpdateSong)
 	router.DELETE("/songs/:song_id", songs_handler.DeleteSong)
 	router.POST("/songs", songs_handler.CreateSong)
+
+	// Location endpoints
+	// router.GET("/countries", churches_handler.GetCountries)
+	// router.GET("/countries/with-states", churches_handler.GetCountriesWithStates)
+	// router.GET("/countries/:id", churches_handler.GetCountryByID)
+	// router.GET("/countries/:country_id/states", churches_handler.GetStatesByCountry)
+	// router.GET("/states", churches_handler.GetStates)
+	// router.GET("/states/:id", churches_handler.GetStateByID)
+	// router.GET("/states/:state_id/churches", churches_handler.GetChurchesByState)
+
+	// Church CRUD endpoints
+	router.GET("/churches", churches_handler.GetChurches)
+	router.GET("/churches/:id", churches_handler.GetChurchByID)
+	router.POST("/churches", churches_handler.CreateChurch)
+	router.PUT("/churches/:id", churches_handler.UpdateChurch)
+	router.DELETE("/churches/:id", churches_handler.DeleteChurch)
+
+	// Church elders endpoints
+	// router.GET("/churches/:church_id/elders", churches_handler.GetElders)
+	// router.GET("/elders/:id", churches_handler.GetElderByID)
+	// router.POST("/elders", churches_handler.CreateElder)
+	// router.PUT("/elders/:id", churches_handler.UpdateElder)
+	// router.DELETE("/elders/:id", churches_handler.DeleteElder)
+
+	// Church services endpoints
+	// router.GET("/churches/:church_id/services", churches_handler.GetServices)
+	// router.GET("/services/:id", churches_handler.GetServiceByID)
+	// router.POST("/services", churches_handler.CreateService)
+	// router.PUT("/services/:id", churches_handler.UpdateService)
+	// router.DELETE("/services/:id", churches_handler.DeleteService)
+
+	// Church events endpoints
+	router.GET("/churches/:id/events", churches_handler.GetEvents)
+	router.GET("/events/:id", churches_handler.GetEventByID)
+	router.POST("/events", churches_handler.CreateEvent)
+	router.PUT("/events/:id", churches_handler.UpdateEvent)
+	router.DELETE("/events/:id", churches_handler.DeleteEvent)
 
 	// App Endpoints
 	router.GET("/app/songbooks", app_songbooks_handler.GetSongbooks)

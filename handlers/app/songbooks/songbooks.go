@@ -61,6 +61,18 @@ func ExportSongbookByID(c *gin.Context) {
 		return
 	}
 
-	// export data as sql script file
-	c.FileAttachment(exportedData, fmt.Sprintf("songbook_%d_export.sql", songbookID))
+	// save to file for debugging
+	// debugFileName := fmt.Sprintf("debug_songbook_%d_export.sql", songbookID)
+	// err = os.WriteFile(debugFileName, []byte(exportedData), 0644)
+	// if err != nil {
+	// 	// Log error but don't fail the request
+	// 	fmt.Printf("Failed to save debug file: %v\n", err)
+	// } else {
+	// 	fmt.Printf("Debug SQL saved to: %s\n", debugFileName)
+	// }
+
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=songbook_%d_export.sql", songbookID))
+	c.Header("Content-Type", "application/sql; charset=utf-8")
+	c.Data(http.StatusOK, "application/sql; charset=utf-8", []byte(exportedData))
+
 }

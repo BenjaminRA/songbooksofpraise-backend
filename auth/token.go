@@ -42,10 +42,11 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.AccessToken,  // value
 		accessMaxAge,   // maxAge in seconds
 		"/",            // path
-		// "",             // domain (empty means current domain)
-		".songbooksofpraise.com", // domain (empty means current domain)
-		true,                     // secure (HTTPS only)
-		true,                     // httpOnly
+		"",             // domain (empty means current domain)
+		false,          // secure (HTTPS only)
+		// ".songbooksofpraise.com", // domain (empty means current domain)
+		// true,                     // secure (HTTPS only)
+		true, // httpOnly
 	)
 
 	// Set Refresh Token cookie
@@ -54,10 +55,11 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.RefreshToken, // value
 		refreshMaxAge,  // maxAge in seconds
 		"/",            // path
-		// "",             // domain
-		".songbooksofpraise.com", // domain
-		true,                     // secure
-		true,                     // httpOnly
+		"",             // domain
+		false,          // secure
+		// ".songbooksofpraise.com", // domain
+		// true,                     // secure
+		true, // httpOnly
 	)
 }
 
@@ -71,7 +73,9 @@ func UnsetToken(c *gin.Context) {
 		-1, // negative maxAge deletes the cookie
 		"/",
 		"",
-		true,
+		false,
+		// ".songbooksofpraise.com", // domain (empty means current domain),
+		// true,
 		true,
 	)
 
@@ -82,7 +86,9 @@ func UnsetToken(c *gin.Context) {
 		-1,
 		"/",
 		"",
-		true,
+		false,
+		// ".songbooksofpraise.com", // domain (empty means current domain),
+		// true,
 		true,
 	)
 }
@@ -97,7 +103,7 @@ func CreateToken(user models.User) (TokenDetails, error) {
 	tokenClaims["user_id"] = user.ID
 	tokenClaims["verified"] = user.Verified
 	tokenClaims["access_uuid"] = tokenDetails.AccessUUID
-	tokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	tokenClaims["exp"] = time.Now().UTC().Add(time.Minute * 15).Unix()
 	tokenDetails.AtExp = tokenClaims["exp"].(int64)
 
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)
@@ -112,7 +118,7 @@ func CreateToken(user models.User) (TokenDetails, error) {
 	tokenClaims["user_id"] = user.ID
 	tokenClaims["verified"] = user.Verified
 	tokenClaims["refresh_uuid"] = tokenDetails.RefreshUUID
-	tokenClaims["exp"] = time.Now().Add(time.Hour * 48).Unix()
+	tokenClaims["exp"] = time.Now().UTC().Add(time.Hour * 48).Unix()
 	tokenDetails.RtExp = tokenClaims["exp"].(int64)
 
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)

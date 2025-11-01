@@ -12,7 +12,7 @@ import (
 )
 
 func ResetToken(user models.User) (string, error) {
-	expiration := time.Now().Add(time.Hour * 24).Unix()
+	expiration := time.Now().UTC().Add(time.Hour * 24).Unix()
 	key := helpers.HashValue(fmt.Sprintf("%dRESET%s", user.ID, os.Getenv("SECRET")))
 
 	// Creating Reset token
@@ -70,7 +70,7 @@ func VerifyResetToken(resetToken string) (models.User, error) {
 	}
 
 	// Check if token has expired
-	if time.Now().Unix() > expiration {
+	if time.Now().UTC().Unix() > expiration {
 		return models.User{}, fmt.Errorf("reset_token.expired")
 	}
 

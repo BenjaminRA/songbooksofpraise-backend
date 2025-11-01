@@ -22,7 +22,7 @@ type Category struct {
 
 func (n *Category) songbookUpdatedAt() error {
 	db := sqlite.GetDBConnection()
-	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now(), n.SongbookID)
+	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now().UTC(), n.SongbookID)
 	return err
 }
 
@@ -142,8 +142,8 @@ func (n *Category) GetChildren() ([]Category, error) {
 func (n *Category) CreateCategory() error {
 	db := sqlite.GetDBConnection()
 
-	n.CreatedAt = time.Now()
-	n.UpdatedAt = time.Now()
+	n.CreatedAt = time.Now().UTC()
+	n.UpdatedAt = time.Now().UTC()
 
 	result, err := db.Exec("INSERT INTO categories (name, parent_category_id, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
 		n.Name, n.ParentCategoryID, n.SongbookID, n.CreatedAt, n.UpdatedAt)
@@ -167,7 +167,7 @@ func (n *Category) CreateCategory() error {
 
 func (n *Category) UpdateCategory() error {
 	db := sqlite.GetDBConnection()
-	n.UpdatedAt = time.Now()
+	n.UpdatedAt = time.Now().UTC()
 
 	_, err := db.Exec("UPDATE categories SET name = ?, parent_category_id = ?, updated_at = ? WHERE id = ?",
 		n.Name, n.ParentCategoryID, n.UpdatedAt, n.ID)

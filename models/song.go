@@ -46,7 +46,7 @@ type SongCategory struct {
 
 func (n *Song) songbookUpdatedAt() error {
 	db := sqlite.GetDBConnection()
-	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now(), n.SongbookID)
+	_, err := db.Exec("UPDATE songbooks SET updated_at = ? WHERE id = ?", time.Now().UTC(), n.SongbookID)
 	return err
 }
 
@@ -138,7 +138,7 @@ func (n *Song) createS3File(fieldName string, bucket string) error {
 
 	reflections.SetField(n, actualFieldName, &url)
 
-	_, err = sqlite.GetDBConnection().Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", url, time.Now(), n.ID)
+	_, err = sqlite.GetDBConnection().Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", url, time.Now().UTC(), n.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update song in database: %w", err)
 	}
@@ -149,8 +149,8 @@ func (n *Song) createS3File(fieldName string, bucket string) error {
 func (n *Song) CreateSong() error {
 	db := sqlite.GetDBConnection()
 
-	n.CreatedAt = time.Now()
-	n.UpdatedAt = time.Now()
+	n.CreatedAt = time.Now().UTC()
+	n.UpdatedAt = time.Now().UTC()
 
 	result, err := db.Exec("INSERT INTO songs (title, lyrics, youtube_url, description, number, transpose, scroll_speed, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		n.Title, n.Lyrics, n.YouTubeURL, n.Description, n.Number, n.Transpose, n.ScrollSpeed, n.SongbookID, n.CreatedAt, n.UpdatedAt)
@@ -175,7 +175,7 @@ func (n *Song) CreateSong() error {
 
 	for _, categoryID := range n.CategoriesID {
 		_, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
-			n.ID, categoryID, time.Now(), time.Now())
+			n.ID, categoryID, time.Now().UTC(), time.Now().UTC())
 		if err != nil {
 			return err
 		}
@@ -248,7 +248,7 @@ func (n *Song) replaceFile(newSong *Song, fieldName string, bucket string) error
 
 	db := sqlite.GetDBConnection()
 
-	_, err = db.Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", newValue, time.Now(), newSong.ID)
+	_, err = db.Exec("UPDATE songs SET "+fieldName+" = ?, updated_at = ? WHERE id = ?", newValue, time.Now().UTC(), newSong.ID)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func (n *Song) replaceFile(newSong *Song, fieldName string, bucket string) error
 
 func (n *Song) UpdateSong() error {
 	db := sqlite.GetDBConnection()
-	n.UpdatedAt = time.Now()
+	n.UpdatedAt = time.Now().UTC()
 
 	originalSong, err := n.GetSongByID(n.ID)
 	if err != nil {
@@ -278,7 +278,7 @@ func (n *Song) UpdateSong() error {
 
 	for _, categoryID := range n.CategoriesID {
 		_, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
-			n.ID, categoryID, time.Now(), time.Now())
+			n.ID, categoryID, time.Now().UTC(), time.Now().UTC())
 		if err != nil {
 			return err
 		}
@@ -391,8 +391,8 @@ func (n *Song) DeleteSong() error {
 func (n *SongCategory) AddSongToCategory() error {
 	db := sqlite.GetDBConnection()
 
-	n.CreatedAt = time.Now()
-	n.UpdatedAt = time.Now()
+	n.CreatedAt = time.Now().UTC()
+	n.UpdatedAt = time.Now().UTC()
 
 	result, err := db.Exec("INSERT INTO song_categories (song_id, category_id, created_at, updated_at) VALUES (?, ?, ?, ?)",
 		n.SongID, n.CategoryID, n.CreatedAt, n.UpdatedAt)

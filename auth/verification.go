@@ -12,7 +12,7 @@ import (
 )
 
 func VerificationToken(user models.User) (string, error) {
-	expiration := time.Now().Add(time.Hour * 24).Unix()
+	expiration := time.Now().UTC().Add(time.Hour * 24).Unix()
 	key := helpers.HashValue(fmt.Sprintf("%dVERIFICATION%s", user.ID, os.Getenv("SECRET")))
 
 	// Creating Verification token
@@ -68,7 +68,7 @@ func VerifyVerificationToken(verificationToken string) (models.User, error) {
 	}
 
 	// Check if token has expired
-	if time.Now().Unix() > expiration {
+	if time.Now().UTC().Unix() > expiration {
 		return models.User{}, fmt.Errorf("email.verify.expired")
 	}
 

@@ -142,8 +142,8 @@ func (n *User) Register() error {
 	n.Editor = true
 	n.Moderator = false
 	n.Verified = false
-	n.CreatedAt = time.Now()
-	n.UpdatedAt = time.Now()
+	n.CreatedAt = time.Now().UTC()
+	n.UpdatedAt = time.Now().UTC()
 
 	result, err := db.Exec("INSERT INTO users (first_name, last_name, email, password, admin, editor, moderator, verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		n.FirstName, n.LastName, n.Email, n.Password, n.Admin, n.Editor, n.Moderator, n.Verified, n.CreatedAt, n.UpdatedAt)
@@ -178,7 +178,7 @@ func (n *User) UpdateUser() error {
 	}
 
 	db := sqlite.GetDBConnection()
-	n.UpdatedAt = time.Now()
+	n.UpdatedAt = time.Now().UTC()
 
 	_, err := db.Exec("UPDATE users SET first_name = ?, last_name = ?, email = ?, admin = ?, editor = ?, moderator = ?, verified = ?, updated_at = ? WHERE id = ?",
 		n.FirstName, n.LastName, n.Email, n.Admin, n.Editor, n.Moderator, n.Verified, n.UpdatedAt, n.ID)

@@ -87,7 +87,7 @@ func ValidateAppToken(encryptedToken string) error {
 	}
 
 	// Check if token has expired
-	now := time.Now().Unix()
+	now := time.Now().UTC().Unix()
 	if now > token.ExpiresAt {
 		return fmt.Errorf("token has expired")
 	}

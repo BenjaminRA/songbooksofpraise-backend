@@ -9,7 +9,7 @@ import (
 // CleanupExpiredTokens removes expired tokens from the database
 func CleanupExpiredTokens() error {
 	db := sqlite.GetDBConnection()
-	currentTime := time.Now().Unix()
+	currentTime := time.Now().UTC().Unix()
 
 	// Clean up expired session tokens
 	_, err := db.Exec("DELETE FROM session_tokens WHERE at_exp < ? OR rt_exp < ?", currentTime, currentTime)

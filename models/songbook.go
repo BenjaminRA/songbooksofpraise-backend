@@ -172,8 +172,8 @@ func (n *Songbook) CreateSongbook() error {
 	n.Rejected = false
 	n.Editors = []*SongbookEditor{} // Initialize empty editors slice
 	n.Categories = []Category{}     // Initialize empty categories slice
-	n.CreatedAt = time.Now()
-	n.UpdatedAt = time.Now()
+	n.CreatedAt = time.Now().UTC()
+	n.UpdatedAt = time.Now().UTC()
 
 	result, err := db.Exec("INSERT INTO songbooks (title, verified, in_verification, rejected, owner_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		n.Title, n.Verified, n.InVerification, n.Rejected, n.OwnerID, n.CreatedAt, n.UpdatedAt)
@@ -219,7 +219,7 @@ func (n *Songbook) DeleteSongbook() error {
 
 func (n *Songbook) UpdateSongbook() error {
 	db := sqlite.GetDBConnection()
-	n.UpdatedAt = time.Now()
+	n.UpdatedAt = time.Now().UTC()
 
 	_, err := db.Exec("UPDATE songbooks SET title = ?, updated_at = ? WHERE id = ?",
 		n.Title, n.UpdatedAt, n.ID)
@@ -245,8 +245,8 @@ func (n *Songbook) UpdateSongbook() error {
 func (n *Songbook) AddEditor(editor string) error {
 	db := sqlite.GetDBConnection()
 
-	createdAt := time.Now()
-	updatedAt := time.Now()
+	createdAt := time.Now().UTC()
+	updatedAt := time.Now().UTC()
 
 	user, err := (&User{}).GetUserByEmail(editor)
 	if err != nil {
@@ -374,7 +374,7 @@ func SetSongbookVerificationStatus(id int, verified bool, inVerification bool, r
 
 	if setTime {
 		query += ", updated_at = ?"
-		args = append(args, time.Now())
+		args = append(args, time.Now().UTC())
 	}
 
 	query += " WHERE id = ?"
@@ -391,64 +391,11 @@ func (n *Songbook) ExportSongbookSQL() (string, error) {
 
 	// Add header comment
 	sql.WriteString("-- Songbook Export\n")
-	sql.WriteString(fmt.Sprintf("-- Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	sql.WriteString(fmt.Sprintf("-- Generated: %s\n", time.Now().UTC().Format("2006-01-02 15:04:05")))
 	sql.WriteString("-- \n\n")
 
-	// Create table statements
-	sql.WriteString("-- Create Tables\n")
-	sql.WriteString(`CREATE TABLE IF NOT EXISTS songbooks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    parent_category_id INTEGER,
-    songbook_id INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_category_id) REFERENCES categories(id) ON DELETE SET NULL,
-    FOREIGN KEY (songbook_id) REFERENCES songbooks(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS songs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    lyrics TEXT,
-    music_sheet TEXT,
-    music TEXT,
-    music_only TEXT,
-    youtube_url TEXT,
-    description TEXT,
-    number INTEGER,
-    voices_all TEXT,
-    voices_soprano TEXT,
-    voices_contralto TEXT,
-    voices_tenor TEXT,
-    voices_bass TEXT,
-    transpose INTEGER DEFAULT 0,
-    scroll_speed REAL DEFAULT 1.0,
-    songbook_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (songbook_id) REFERENCES songbooks(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS song_categories (
-    song_id INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
-    PRIMARY KEY (song_id, category_id),
-    FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-);
-
-`)
-
 	// Begin transaction
-	sql.WriteString("BEGIN TRANSACTION;\n\n")
+	// sql.WriteString("BEGIN TRANSACTION;\n\n")
 
 	// Export the songbook
 	songbook, err := n.GetSongbookByID(n.ID)
@@ -456,7 +403,7 @@ CREATE TABLE IF NOT EXISTS song_categories (
 		return "", err
 	}
 
-	sql.WriteString("-- Songbook\n")
+	// sql.WriteString("-- Songbook\n")
 	sql.WriteString(fmt.Sprintf("INSERT OR REPLACE INTO songbooks (id, title, created_at, updated_at) VALUES (%d, %s, %s, %s);\n\n",
 		songbook.ID,
 		helpers.SqlEscape(songbook.Title),
@@ -465,7 +412,7 @@ CREATE TABLE IF NOT EXISTS song_categories (
 
 	// Export categories
 	if len(songbook.Categories) > 0 {
-		sql.WriteString("-- Categories\n")
+		// sql.WriteString("-- Categories\n")
 		for _, category := range songbook.Categories {
 			parentID := "NULL"
 			if category.ParentCategoryID != nil {
@@ -494,7 +441,7 @@ CREATE TABLE IF NOT EXISTS song_categories (
 	}
 
 	if len(songs) > 0 {
-		sql.WriteString("-- Songs\n")
+		// sql.WriteString("-- Songs\n")
 		for _, song := range songs {
 			sql.WriteString(fmt.Sprintf("INSERT OR REPLACE INTO songs (id, title, lyrics, music_sheet, music, music_only, youtube_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s);\n",
 				song.ID,
@@ -520,7 +467,7 @@ CREATE TABLE IF NOT EXISTS song_categories (
 		sql.WriteString("\n")
 
 		// Export song-category relationships
-		sql.WriteString("-- Song-Category Relationships\n")
+		// sql.WriteString("-- Song-Category Relationships\n")
 		for _, song := range songs {
 			// Get categories for this song
 			rows, err := db.Query("SELECT category_id FROM song_categories WHERE song_id = ?", song.ID)
@@ -541,7 +488,7 @@ CREATE TABLE IF NOT EXISTS song_categories (
 	}
 
 	// Commit transaction
-	sql.WriteString("COMMIT;\n")
+	// sql.WriteString("COMMIT;\n")
 
 	return sql.String(), nil
 }
