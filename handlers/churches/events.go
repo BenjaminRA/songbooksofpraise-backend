@@ -59,21 +59,20 @@ func GetEventByID(c *gin.Context) {
 
 // CreateEvent creates a new event
 func CreateEvent(c *gin.Context) {
-	var req models.CreateEventRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var event models.Event
+	if err := c.ShouldBindJSON(&event); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	event := &models.Event{}
-	result, err := event.CreateEvent(&req)
-	if err != nil {
+	if err := event.CreateEvent(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"event": result,
+		"message": "Event created successfully",
+		"event":   event,
 	})
 }
 
@@ -86,26 +85,22 @@ func UpdateEvent(c *gin.Context) {
 		return
 	}
 
-	var req models.UpdateEventRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var event models.Event
+	if err := c.ShouldBindJSON(&event); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	event := &models.Event{}
-	result, err := event.UpdateEvent(eventID, &req)
-	if err != nil {
+	event.ID = &eventID
+
+	if err := event.UpdateEvent(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if result == nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Event not found"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"event": result,
+		"message": "Event updated successfully",
+		"event":   event,
 	})
 }
 

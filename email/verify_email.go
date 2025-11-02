@@ -20,10 +20,32 @@ func SendVerificationEmail(c *gin.Context, user models.User) error {
 
 	link := fmt.Sprintf("%s/login?token=%s", os.Getenv("FRONTEND_URL"), token)
 
+	// Build email content using template helpers
+	content := Paragraph(locale.GetLocalizedMessage(lang, "email.verify.greeting")) +
+		Paragraph(locale.GetLocalizedMessage(lang, "email.verify.body")) +
+		InfoBox(locale.GetLocalizedMessage(lang, "email.verify.info"), "info")
+
+	// Build footer with the actual link
+	footerText := fmt.Sprintf("%s<br><br><a href=\"%s\" style=\"color: #5048E5; word-break: break-all;\">%s</a>", 
+		locale.GetLocalizedMessage(lang, "email.verify.footer"),
+		link,
+		link,
+	)
+
+	// Generate HTML email using template
+	htmlContent := EmailTemplate(
+		locale.GetLocalizedMessage(lang, "email.verify.title"),
+		locale.GetLocalizedMessage(lang, "email.verify.preheader"),
+		content,
+		locale.GetLocalizedMessage(lang, "email.verify.button"),
+		link,
+		footerText,
+	)
+
 	err = SendEmail(
 		user.Email,
 		locale.GetLocalizedMessage(lang, "email.verify.subject"),
-		fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.verify.message"), link),
+		htmlContent,
 	)
 
 	if err != nil {

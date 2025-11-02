@@ -2,22 +2,21 @@ package models
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/BenjaminRA/himnario-backend/db/sqlite"
 )
 
 type Event struct {
-	ID          *int       `json:"id"`
-	Name        string     `json:"name"`
-	StartDate   time.Time  `json:"start_date"`
-	EndDate     *time.Time `json:"end_date"`
-	Location    *string    `json:"location"`
-	Image       *string    `json:"image"`
-	Color       *string    `json:"color"`
-	Recurrent   bool       `json:"recurrent"`
-	Description *string    `json:"description"`
-	ChurchID    int        `json:"church_id"`
+	ID          *int    `json:"id"`
+	Name        string  `json:"name"`
+	StartDate   string  `json:"start_date"` // Store as string to preserve local timezone
+	EndDate     *string `json:"end_date"`   // Store as string to preserve local timezone
+	Location    *string `json:"location"`
+	Image       *string `json:"image"`
+	Color       *string `json:"color"`
+	Recurrent   bool    `json:"recurrent"`
+	Description *string `json:"description"`
+	ChurchID    int     `json:"church_id"`
 }
 
 func (n *Event) GetEventsByChurchID(churchID int) ([]Event, error) {
@@ -75,7 +74,7 @@ func (n *Event) GetEventByID(id int) (*Event, error) {
 func (n *Event) CreateEvent() error {
 	db := sqlite.GetDBConnection()
 
-	_, err := db.Exec(`
+	result, err := db.Exec(`
 		INSERT INTO church_events (name, start_date, end_date, location, image, color, recurrent, description, church_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, n.Name, n.StartDate, n.EndDate, n.Location, n.Image, n.Color, n.Recurrent, n.Description, n.ChurchID)
@@ -83,6 +82,13 @@ func (n *Event) CreateEvent() error {
 	if err != nil {
 		return err
 	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	idInt := int(id)
+	n.ID = &idInt
 
 	return nil
 }

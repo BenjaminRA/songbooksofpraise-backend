@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/BenjaminRA/himnario-backend/locale"
 	"github.com/BenjaminRA/himnario-backend/models"
@@ -63,15 +64,29 @@ func EmailEditors(current []string, updated models.Songbook, lang string) error 
 		if !new_ok && old_ok {
 			deleted = append(deleted, editor)
 		}
-
 	}
 
+	// Send emails to removed editors
 	fmt.Printf("deleted: %v\n", deleted)
 	for _, email := range deleted {
+		content := Paragraph(locale.GetLocalizedMessage(lang, "email.editor.removed.greeting")) +
+			Paragraph(fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.editor.removed.body"), updated.Title)) +
+			InfoBox(locale.GetLocalizedMessage(lang, "email.editor.removed.info"), "info") +
+			Paragraph(locale.GetLocalizedMessage(lang, "email.editor.removed.footer"))
+
+		htmlContent := EmailTemplate(
+			locale.GetLocalizedMessage(lang, "email.editor.removed.title"),
+			locale.GetLocalizedMessage(lang, "email.editor.removed.preheader"),
+			content,
+			"",
+			"",
+			"",
+		)
+
 		err := SendEmail(
 			email,
 			locale.GetLocalizedMessage(lang, "email.editor.removed.subject"),
-			fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.editor.removed.content"), updated.Title),
+			htmlContent,
 		)
 
 		if err != nil {
@@ -79,12 +94,35 @@ func EmailEditors(current []string, updated models.Songbook, lang string) error 
 		}
 	}
 
+	// Send emails to added editors
 	fmt.Printf("added: %v\n", added)
 	for _, email := range added {
+		content := Paragraph(locale.GetLocalizedMessage(lang, "email.editor.added.greeting")) +
+			Paragraph(fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.editor.added.body"), updated.Title)) +
+			InfoBox(locale.GetLocalizedMessage(lang, "email.editor.added.info"), "success")
+
+		songbookLink := fmt.Sprintf("%s/songbooks/%d", os.Getenv("FRONTEND_URL"), updated.ID)
+
+		// Build footer with the actual link
+		footerText := fmt.Sprintf("%s<br><br><a href=\"%s\" style=\"color: #5048E5; word-break: break-all;\">%s</a>", 
+			locale.GetLocalizedMessage(lang, "email.editor.added.footer"),
+			songbookLink,
+			songbookLink,
+		)
+
+		htmlContent := EmailTemplate(
+			locale.GetLocalizedMessage(lang, "email.editor.added.title"),
+			locale.GetLocalizedMessage(lang, "email.editor.added.preheader"),
+			content,
+			locale.GetLocalizedMessage(lang, "email.editor.added.button"),
+			songbookLink,
+			footerText,
+		)
+
 		err := SendEmail(
 			email,
 			locale.GetLocalizedMessage(lang, "email.editor.added.subject"),
-			fmt.Sprintf(locale.GetLocalizedMessage(lang, "email.editor.added.content"), updated.Title),
+			htmlContent,
 		)
 
 		if err != nil {

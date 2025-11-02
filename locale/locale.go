@@ -2,24 +2,28 @@ package locale
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
 
-var bundle i18n.Bundle
-var localizer i18n.Localizer
+var bundle *i18n.Bundle
+
+func init() {
+	// Initialize bundle once at startup
+	bundle = i18n.NewBundle(language.English)
+	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+	bundle.MustLoadMessageFile("locale/en.json")
+	bundle.MustLoadMessageFile("locale/es.json")
+}
 
 func GetLocalizedMessage(lang string, message_id string) string {
-	// bundle := i18n.NewBundle(language.English)
-	if len(bundle.LanguageTags()) == 0 {
-		bundle = *i18n.NewBundle(language.English)
-		bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-		bundle.MustLoadMessageFile("locale/en.json")
-		bundle.MustLoadMessageFile("locale/es.json")
-
-		localizer = *i18n.NewLocalizer(&bundle, lang)
-	}
+	// Normalize language code to lowercase
+	lang = strings.ToLower(lang)
+	
+	// Create a new localizer for each request with the specific language
+	localizer := i18n.NewLocalizer(bundle, lang)
 
 	res, err := localizer.Localize(&i18n.LocalizeConfig{
 		MessageID: message_id,
@@ -30,5 +34,4 @@ func GetLocalizedMessage(lang string, message_id string) string {
 	}
 
 	return res
-
 }

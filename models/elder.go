@@ -55,7 +55,7 @@ func (n *Elder) GetElderByID(id int) (*Elder, error) {
 func (n *Elder) CreateElder() error {
 	db := sqlite.GetDBConnection()
 
-	_, err := db.Exec(`
+	result, err := db.Exec(`
 		INSERT INTO elders (name, email, phone, picture, church_id)
 		VALUES (?, ?, ?, ?, ?)
 	`, n.Name, n.Email, n.Phone, n.Picture, n.ChurchID)
@@ -63,6 +63,13 @@ func (n *Elder) CreateElder() error {
 	if err != nil {
 		return err
 	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	idInt := int(id)
+	n.ID = &idInt
 
 	return nil
 }

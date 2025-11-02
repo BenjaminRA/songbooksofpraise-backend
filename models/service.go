@@ -53,7 +53,7 @@ func (n *Service) GetServiceByID(id int) (*Service, error) {
 func (n *Service) CreateService() error {
 	db := sqlite.GetDBConnection()
 
-	_, err := db.Exec(`
+	result, err := db.Exec(`
 		INSERT INTO church_services (service_type, schedule, church_id)
 		VALUES (?, ?, ?)
 	`, n.ServiceType, n.Schedule, n.ChurchID)
@@ -61,6 +61,13 @@ func (n *Service) CreateService() error {
 	if err != nil {
 		return err
 	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	idInt := int(id)
+	n.ID = &idInt
 
 	return nil
 }

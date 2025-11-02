@@ -59,21 +59,20 @@ func GetServiceByID(c *gin.Context) {
 
 // CreateService creates a new service
 func CreateService(c *gin.Context) {
-	var req models.CreateServiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var service models.Service
+	if err := c.ShouldBindJSON(&service); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	service := &models.Service{}
-	result, err := service.CreateService(&req)
-	if err != nil {
+	if err := service.CreateService(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"service": result,
+		"message": "Service created successfully",
+		"service": service,
 	})
 }
 
@@ -86,26 +85,22 @@ func UpdateService(c *gin.Context) {
 		return
 	}
 
-	var req models.UpdateServiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var service models.Service
+	if err := c.ShouldBindJSON(&service); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	service := &models.Service{}
-	result, err := service.UpdateService(serviceID, &req)
-	if err != nil {
+	service.ID = &serviceID
+
+	if err := service.UpdateService(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if result == nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service not found"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"service": result,
+		"message": "Service updated successfully",
+		"service": service,
 	})
 }
 
@@ -118,8 +113,8 @@ func DeleteService(c *gin.Context) {
 		return
 	}
 
-	service := &models.Service{}
-	err = service.DeleteService(serviceID)
+	service := &models.Service{ID: &serviceID}
+	err = service.DeleteService()
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

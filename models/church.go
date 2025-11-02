@@ -21,10 +21,10 @@ type Church struct {
 	YouTube     *string   `json:"youtube"`
 	Spotify     *string   `json:"spotify"`
 	StateID     int       `json:"state_id"`
-	State       *State    `json:"state,omitempty"`    // Not in database, but used in API responses
-	Elders      []Elder   `json:"elders,omitempty"`   // Not in database, but used in API responses
-	Services    []Service `json:"services,omitempty"` // Not in database, but used in API responses
-	Events      []Event   `json:"events,omitempty"`   // Not in database, but used in API responses
+	State       *State    `json:"state,omitempty"`          // Not in database, but used in API responses
+	Elders      []Elder   `json:"elders,omitempty"`         // Not in database, but used in API responses
+	Services    []Service `json:"church_services,omitempty"` // Not in database, but used in API responses
+	Events      []Event   `json:"church_events,omitempty"`   // Not in database, but used in API responses
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -122,7 +122,7 @@ func (n *Church) CreateChurch() error {
 	n.CreatedAt = time.Now().UTC()
 	n.UpdatedAt = time.Now().UTC()
 
-	_, err := db.Exec(`
+	result, err := db.Exec(`
 		INSERT INTO churches (name, address, phone, email, description, website, established, 
 		                     facebook, instagram, youtube, spotify, state_id, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -131,6 +131,36 @@ func (n *Church) CreateChurch() error {
 		n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	n.ID = int(id)
+
+	// Create elders
+	for i := range n.Elders {
+		n.Elders[i].ChurchID = n.ID
+		if err := n.Elders[i].CreateElder(); err != nil {
+			return err
+		}
+	}
+
+	// Create services
+	for i := range n.Services {
+		n.Services[i].ChurchID = n.ID
+		if err := n.Services[i].CreateService(); err != nil {
+			return err
+		}
+	}
+
+	// Create events
+	for i := range n.Events {
+		n.Events[i].ChurchID = n.ID
+		if err := n.Events[i].CreateEvent(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -151,6 +181,171 @@ func (n *Church) UpdateChurch() error {
 		n.StateID, n.UpdatedAt, n.ID)
 	if err != nil {
 		return err
+	}
+
+	// Handle Elders: Update/Create/Delete
+	if err := n.syncElders(); err != nil {
+		return err
+	}
+
+	// Handle Services: Update/Create/Delete
+	if err := n.syncServices(); err != nil {
+		return err
+	}
+
+	// Handle Events: Update/Create/Delete
+	if err := n.syncEvents(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Church) syncElders() error {
+	db := sqlite.GetDBConnection()
+
+	// Get existing elders from database
+	existingElders, err := (&Elder{}).GetEldersByChurchID(n.ID)
+	if err != nil {
+		return err
+	}
+
+	// Create a map of existing elder IDs
+	existingIDs := make(map[int]bool)
+	for _, elder := range existingElders {
+		if elder.ID != nil {
+			existingIDs[*elder.ID] = true
+		}
+	}
+
+	// Track which IDs are in the new data
+	newIDs := make(map[int]bool)
+
+	// Update or create elders
+	for i := range n.Elders {
+		n.Elders[i].ChurchID = n.ID
+		if n.Elders[i].ID != nil && *n.Elders[i].ID > 0 {
+			// Update existing elder
+			newIDs[*n.Elders[i].ID] = true
+			if err := n.Elders[i].UpdateElder(); err != nil {
+				return err
+			}
+		} else {
+			// Create new elder
+			if err := n.Elders[i].CreateElder(); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Delete elders that are not in the new data
+	for id := range existingIDs {
+		if !newIDs[id] {
+			_, err := db.Exec("DELETE FROM elders WHERE id = ?", id)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (n *Church) syncServices() error {
+	db := sqlite.GetDBConnection()
+
+	// Get existing services from database
+	existingServices, err := (&Service{}).GetServicesByChurchID(n.ID)
+	if err != nil {
+		return err
+	}
+
+	// Create a map of existing service IDs
+	existingIDs := make(map[int]bool)
+	for _, service := range existingServices {
+		if service.ID != nil {
+			existingIDs[*service.ID] = true
+		}
+	}
+
+	// Track which IDs are in the new data
+	newIDs := make(map[int]bool)
+
+	// Update or create services
+	for i := range n.Services {
+		n.Services[i].ChurchID = n.ID
+		if n.Services[i].ID != nil && *n.Services[i].ID > 0 {
+			// Update existing service
+			newIDs[*n.Services[i].ID] = true
+			if err := n.Services[i].UpdateService(); err != nil {
+				return err
+			}
+		} else {
+			// Create new service
+			if err := n.Services[i].CreateService(); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Delete services that are not in the new data
+	for id := range existingIDs {
+		if !newIDs[id] {
+			_, err := db.Exec("DELETE FROM church_services WHERE id = ?", id)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (n *Church) syncEvents() error {
+	db := sqlite.GetDBConnection()
+
+	// Get existing events from database
+	existingEvents, err := (&Event{}).GetEventsByChurchID(n.ID)
+	if err != nil {
+		return err
+	}
+
+	// Create a map of existing event IDs
+	existingIDs := make(map[int]bool)
+	for _, event := range existingEvents {
+		if event.ID != nil {
+			existingIDs[*event.ID] = true
+		}
+	}
+
+	// Track which IDs are in the new data
+	newIDs := make(map[int]bool)
+
+	// Update or create events
+	for i := range n.Events {
+		n.Events[i].ChurchID = n.ID
+		if n.Events[i].ID != nil && *n.Events[i].ID > 0 {
+			// Update existing event
+			newIDs[*n.Events[i].ID] = true
+			if err := n.Events[i].UpdateEvent(); err != nil {
+				return err
+			}
+		} else {
+			// Create new event
+			if err := n.Events[i].CreateEvent(); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Delete events that are not in the new data
+	for id := range existingIDs {
+		if !newIDs[id] {
+			_, err := db.Exec("DELETE FROM church_events WHERE id = ?", id)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

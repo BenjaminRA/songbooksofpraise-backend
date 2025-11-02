@@ -59,21 +59,20 @@ func GetElderByID(c *gin.Context) {
 
 // CreateElder creates a new elder
 func CreateElder(c *gin.Context) {
-	var req models.CreateElderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var elder models.Elder
+	if err := c.ShouldBindJSON(&elder); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	elder := &models.Elder{}
-	result, err := elder.CreateElder(&req)
-	if err != nil {
+	if err := elder.CreateElder(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"elder": result,
+		"message": "Elder created successfully",
+		"elder":   elder,
 	})
 }
 
@@ -86,26 +85,22 @@ func UpdateElder(c *gin.Context) {
 		return
 	}
 
-	var req models.UpdateElderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var elder models.Elder
+	if err := c.ShouldBindJSON(&elder); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	elder := &models.Elder{}
-	result, err := elder.UpdateElder(elderID, &req)
-	if err != nil {
+	elder.ID = &elderID
+
+	if err := elder.UpdateElder(); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if result == nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Elder not found"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"elder": result,
+		"message": "Elder updated successfully",
+		"elder":   elder,
 	})
 }
 
@@ -118,8 +113,8 @@ func DeleteElder(c *gin.Context) {
 		return
 	}
 
-	elder := &models.Elder{}
-	err = elder.DeleteElder(elderID)
+	elder := &models.Elder{ID: &elderID}
+	err = elder.DeleteElder()
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
