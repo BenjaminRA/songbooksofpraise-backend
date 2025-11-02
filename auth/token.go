@@ -42,11 +42,11 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.AccessToken,  // value
 		accessMaxAge,   // maxAge in seconds
 		"/",            // path
-		"",             // domain (empty means current domain)
-		false,          // secure (HTTPS only)
-		// ".songbooksofpraise.com", // domain (empty means current domain)
-		// true,                     // secure (HTTPS only)
-		true, // httpOnly
+		// "",             // domain (empty means current domain)
+		// false,          // secure (HTTPS only)
+		".songbooksofpraise.com", // domain (empty means current domain)
+		true,                     // secure (HTTPS only)
+		true,                     // httpOnly
 	)
 
 	// Set Refresh Token cookie
@@ -55,11 +55,11 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.RefreshToken, // value
 		refreshMaxAge,  // maxAge in seconds
 		"/",            // path
-		"",             // domain
-		false,          // secure
-		// ".songbooksofpraise.com", // domain
-		// true,                     // secure
-		true, // httpOnly
+		// "",             // domain
+		// false,          // secure
+		".songbooksofpraise.com", // domain
+		true,                     // secure
+		true,                     // httpOnly
 	)
 }
 
@@ -72,10 +72,10 @@ func UnsetToken(c *gin.Context) {
 		"",
 		-1, // negative maxAge deletes the cookie
 		"/",
-		"",
-		false,
-		// ".songbooksofpraise.com", // domain (empty means current domain),
-		// true,
+		// "",
+		// false,
+		".songbooksofpraise.com", // domain (empty means current domain),
+		true,
 		true,
 	)
 
@@ -85,10 +85,10 @@ func UnsetToken(c *gin.Context) {
 		"",
 		-1,
 		"/",
-		"",
-		false,
-		// ".songbooksofpraise.com", // domain (empty means current domain),
-		// true,
+		// "",
+		// false,
+		".songbooksofpraise.com", // domain (empty means current domain),
+		true,
 		true,
 	)
 }
