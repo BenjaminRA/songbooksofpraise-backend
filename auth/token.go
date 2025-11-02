@@ -35,6 +35,15 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		refreshMaxAge = 0
 	}
 
+	// Determine domain and secure based on DEVELOPMENT environment variable
+	isDevelopment := os.Getenv("DEVELOPMENT") == "true"
+	domain := ".songbooksofpraise.com"
+	secure := true
+	if isDevelopment {
+		domain = ""
+		secure = false
+	}
+
 	// Set Session Token cookie using Gin's method
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(
@@ -42,11 +51,9 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.AccessToken,  // value
 		accessMaxAge,   // maxAge in seconds
 		"/",            // path
-		// "",             // domain (empty means current domain)
-		// false,          // secure (HTTPS only)
-		".songbooksofpraise.com", // domain (empty means current domain)
-		true,                     // secure (HTTPS only)
-		true,                     // httpOnly
+		domain,         // domain (empty means current domain)
+		secure,         // secure (HTTPS only)
+		true,           // httpOnly
 	)
 
 	// Set Refresh Token cookie
@@ -55,16 +62,23 @@ func (n *TokenDetails) SendToken(c *gin.Context) {
 		n.RefreshToken, // value
 		refreshMaxAge,  // maxAge in seconds
 		"/",            // path
-		// "",             // domain
-		// false,          // secure
-		".songbooksofpraise.com", // domain
-		true,                     // secure
-		true,                     // httpOnly
+		domain,         // domain
+		secure,         // secure
+		true,           // httpOnly
 	)
 }
 
 func UnsetToken(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
+
+	// Determine domain and secure based on DEVELOPMENT environment variable
+	isDevelopment := os.Getenv("DEVELOPMENT") == "true"
+	domain := ".songbooksofpraise.com"
+	secure := true
+	if isDevelopment {
+		domain = ""
+		secure = false
+	}
 
 	// Unset Session Token
 	c.SetCookie(
@@ -72,10 +86,8 @@ func UnsetToken(c *gin.Context) {
 		"",
 		-1, // negative maxAge deletes the cookie
 		"/",
-		// "",
-		// false,
-		".songbooksofpraise.com", // domain (empty means current domain),
-		true,
+		domain, // domain (empty means current domain),
+		secure,
 		true,
 	)
 
@@ -85,10 +97,8 @@ func UnsetToken(c *gin.Context) {
 		"",
 		-1,
 		"/",
-		// "",
-		// false,
-		".songbooksofpraise.com", // domain (empty means current domain),
-		true,
+		domain, // domain (empty means current domain),
+		secure,
 		true,
 	)
 }
