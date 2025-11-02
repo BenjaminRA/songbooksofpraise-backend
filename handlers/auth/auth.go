@@ -191,3 +191,80 @@ func DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{})
 }
+
+// ForgotPassword handles forgot password requests
+func ForgotPassword(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+
+	var request map[string]string
+	c.BindJSON(&request)
+
+	emailAddress := request["email"]
+
+	// Check if user exists
+	user, err := new(models.User).GetUserByEmail(emailAddress)
+	if err != nil {
+		// Don't reveal if email exists or not for security
+		c.JSON(http.StatusOK, gin.H{
+			"message": locale.GetLocalizedMessage(lang, "password_reset.email_sent"),
+		})
+		return
+	}
+
+	// Generate password reset token (valid for 24 hours)
+	token, err := auth.ResetToken(user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Send password reset email
+	err = email.SendPasswordResetEmail(c, user, token)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": locale.GetLocalizedMessage(lang, "password_reset.email_sent"),
+	})
+}
+
+// ResetPassword handles password reset with token
+func ResetPassword(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+
+	var request map[string]string
+	c.BindJSON(&request)
+
+	token := request["token"]
+	newPassword := request["password"]
+
+	// Validate the token
+	user, err := auth.VerifyResetToken(token)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": locale.GetLocalizedMessage(lang, "password_reset.token_invalid"),
+		})
+		return
+	}
+
+	// Update the password
+	user.Password = newPassword
+	err = user.UpdatePassword()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": locale.GetLocalizedMessage(lang, "password_reset.success"),
+	})
+}
+

@@ -117,6 +117,8 @@ func main() {
 	router.GET("/auth/users", auth_handler.GetUsers)
 	router.POST("/auth/verification", auth_handler.VerifyUserEmail)
 	router.POST("/auth/verification/resend", auth_handler.EmailVerificationResend)
+	router.POST("/auth/forgot-password", auth_handler.ForgotPassword)
+	router.POST("/auth/reset-password", auth_handler.ResetPassword)
 
 	router.POST("/songbooks/:id/verify", songbooks_handler.VerifySongbook)
 	router.POST("/songbooks/:id/send-to-verify", songbooks_handler.SendToVerifySongbook)

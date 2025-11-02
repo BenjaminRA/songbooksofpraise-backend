@@ -10,6 +10,21 @@
   "refresh_token.invalid": "Invalid refresh token",
   "refresh_token.expired": "Expired refresh token",
   
+  "password_reset.email_not_found": "No account found with that email address",
+  "password_reset.email_sent": "Password reset email sent successfully",
+  "password_reset.token_invalid": "Invalid or expired password reset token",
+  "password_reset.success": "Password has been reset successfully",
+  
+  "email.password_reset.subject": "Reset Your Password",
+  "email.password_reset.title": "Password Reset Request",
+  "email.password_reset.preheader": "Reset your password to regain access",
+  "email.password_reset.greeting": "Hello,",
+  "email.password_reset.body": "We received a request to reset your password for your Songbooks of Praise account. Click the button below to choose a new password.",
+  "email.password_reset.info": "This password reset link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.",
+  "email.password_reset.ignore": "If you did not request this password reset, please ignore this email. Your password will remain unchanged.",
+  "email.password_reset.button": "Reset Password",
+  "email.password_reset.footer": "If the button above doesn't work, copy and paste this link into your browser.",
+  
   "email.verify.subject": "Verify Your Email Address",
   "email.verify.title": "Welcome to Songbooks of Praise!",
   "email.verify.preheader": "Verify your email to get started",

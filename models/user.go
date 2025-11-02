@@ -198,3 +198,17 @@ func (n *User) DeleteUser() error {
 
 	return nil
 }
+
+func (n *User) UpdatePassword() error {
+	db := sqlite.GetDBConnection()
+	n.UpdatedAt = time.Now().UTC()
+
+	_, err := db.Exec("UPDATE users SET password = ?, updated_at = ? WHERE id = ?",
+		n.Password, n.UpdatedAt, n.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+

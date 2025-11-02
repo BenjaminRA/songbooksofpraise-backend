@@ -10,6 +10,21 @@
   "refresh_token.invalid": "Token de refresco inválido",
   "refresh_token.expired": "Token de refresco ha expirado",
   
+  "password_reset.email_not_found": "No se encontró ninguna cuenta con ese correo electrónico",
+  "password_reset.email_sent": "Correo de restablecimiento de contraseña enviado exitosamente",
+  "password_reset.token_invalid": "Token de restablecimiento de contraseña inválido o expirado",
+  "password_reset.success": "La contraseña ha sido restablecida exitosamente",
+  
+  "email.password_reset.subject": "Restablece Tu Contraseña",
+  "email.password_reset.title": "Solicitud de Restablecimiento de Contraseña",
+  "email.password_reset.preheader": "Restablece tu contraseña para recuperar el acceso",
+  "email.password_reset.greeting": "Hola,",
+  "email.password_reset.body": "Recibimos una solicitud para restablecer la contraseña de tu cuenta de Songbooks of Praise. Haz clic en el botón a continuación para elegir una nueva contraseña.",
+  "email.password_reset.info": "Este enlace de restablecimiento de contraseña expirará en 1 hora. Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura.",
+  "email.password_reset.ignore": "Si no solicitaste este restablecimiento de contraseña, por favor ignora este correo. Tu contraseña permanecerá sin cambios.",
+  "email.password_reset.button": "Restablecer Contraseña",
+  "email.password_reset.footer": "Si el botón de arriba no funciona, copia y pega este enlace en tu navegador.",
+  
   "email.verify.subject": "Verifica Tu Correo Electrónico",
   "email.verify.title": "¡Bienvenido a Songbooks of Praise!",
   "email.verify.preheader": "Verifica tu correo para comenzar",
