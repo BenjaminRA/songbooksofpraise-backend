@@ -47,3 +47,24 @@ func CheckAuthentication() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, err := auth.RetrieveUser(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": locale.GetLocalizedMessage(c.Request.Context().Value("language").(string), err.Error()),
+			})
+			return
+		}
+
+		if !user.Admin {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": locale.GetLocalizedMessage(c.Request.Context().Value("language").(string), "unauthorized.admin_required"),
+			})
+			return
+		}
+
+		c.Next()
+	}
+}

@@ -186,6 +186,20 @@ func (n *User) UpdateUser() error {
 	return nil
 }
 
+func (n *User) UpdateProfile() error {
+	db := sqlite.GetDBConnection()
+	n.UpdatedAt = time.Now().UTC()
+
+	// Update only first name and last name
+	_, err := db.Exec("UPDATE users SET first_name = ?, last_name = ?, updated_at = ? WHERE id = ?",
+		n.FirstName, n.LastName, n.UpdatedAt, n.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (n *User) DeleteUser() error {
 	db := sqlite.GetDBConnection()
 	_, err := db.Exec("DELETE FROM users WHERE email = ?", n.Email)

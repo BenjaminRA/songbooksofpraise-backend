@@ -58,7 +58,8 @@ CREATE TABLE church_services (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   church_id INT NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
   service_type VARCHAR(100) NOT NULL,
-  schedule VARCHAR(100) NOT NULL
+  weekday INTEGER NOT NULL, -- 0 = Sunday, 6 = Saturday
+  time TIME NOT NULL
 );
 
 CREATE TABLE church_events (

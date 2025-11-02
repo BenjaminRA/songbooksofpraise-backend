@@ -177,6 +177,29 @@ func UpdateUser(c *gin.Context) {
 	})
 }
 
+func UpdateProfile(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+	var user models.User
+	var body gin.H
+	c.BindJSON(&body)
+
+	if err := helpers.BindJSON(body, &user); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	if err := user.UpdateProfile(); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": locale.GetLocalizedMessage(lang, err.Error())})
+		return
+	}
+
+	user.Password = "" // Don't send password back
+	c.JSON(http.StatusOK, gin.H{
+		"user":    user,
+		"message": locale.GetLocalizedMessage(lang, "user.update.success"),
+	})
+}
+
 func DeleteUser(c *gin.Context) {
 	lang := c.Request.Context().Value("language").(string)
 	var user models.User

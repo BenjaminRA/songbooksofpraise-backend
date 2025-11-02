@@ -84,5 +84,7 @@
   "email.songbook.rejected.body": "Después de una revisión cuidadosa, el cancionero \"%s\" no ha sido aprobado para publicación en este momento.",
   "email.songbook.rejected.info": "Por favor revisa nuestras pautas de contenido y realiza las revisiones necesarias antes de volver a enviar. Si tienes preguntas, contacta a nuestro equipo de soporte.",
   "email.songbook.rejected.button": "Ver Directrices",
-  "email.songbook.rejected.footer": "Agradecemos tu comprensión y esperamos tu envío actualizado."
+  "email.songbook.rejected.footer": "Agradecemos tu comprensión y esperamos tu envío actualizado.",
+  
+  "unauthorized.admin_required": "Se requieren privilegios de administrador para realizar esta acción"
 }

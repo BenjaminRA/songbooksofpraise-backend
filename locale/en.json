@@ -84,5 +84,7 @@
   "email.songbook.rejected.body": "After careful review, the songbook \"%s\" has not been approved for publication at this time.",
   "email.songbook.rejected.info": "Please review our content guidelines and make necessary revisions before resubmitting. If you have questions, contact our support team.",
   "email.songbook.rejected.button": "View Guidelines",
-  "email.songbook.rejected.footer": "We appreciate your understanding and look forward to your updated submission."
+  "email.songbook.rejected.footer": "We appreciate your understanding and look forward to your updated submission.",
+  
+  "unauthorized.admin_required": "Administrator privileges required to perform this action"
 }

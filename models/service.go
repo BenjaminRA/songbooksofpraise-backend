@@ -9,13 +9,14 @@ import (
 type Service struct {
 	ID          *int   `json:"id"`
 	ServiceType string `json:"service_type"`
-	Schedule    string `json:"schedule"`
+	Weekday     int    `json:"weekday"` // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+	Time        string `json:"time"`    // HH:MM format
 	ChurchID    int    `json:"church_id"`
 }
 
 func (n *Service) GetServicesByChurchID(churchID int) ([]Service, error) {
 	db := sqlite.GetDBConnection()
-	rows, err := db.Query("SELECT id, service_type, schedule, church_id FROM church_services WHERE church_id = ? ORDER BY service_type", churchID)
+	rows, err := db.Query("SELECT id, service_type, weekday, time, church_id FROM church_services WHERE church_id = ? ORDER BY weekday, time", churchID)
 	if err != nil {
 		return []Service{}, err
 	}
@@ -24,7 +25,7 @@ func (n *Service) GetServicesByChurchID(churchID int) ([]Service, error) {
 	result := []Service{}
 	for rows.Next() {
 		elem := Service{}
-		err := rows.Scan(&elem.ID, &elem.ServiceType, &elem.Schedule, &elem.ChurchID)
+		err := rows.Scan(&elem.ID, &elem.ServiceType, &elem.Weekday, &elem.Time, &elem.ChurchID)
 		if err != nil {
 			continue
 		}
@@ -36,10 +37,10 @@ func (n *Service) GetServicesByChurchID(churchID int) ([]Service, error) {
 
 func (n *Service) GetServiceByID(id int) (*Service, error) {
 	db := sqlite.GetDBConnection()
-	row := db.QueryRow("SELECT id, service_type, schedule, church_id FROM church_services WHERE id = ?", id)
+	row := db.QueryRow("SELECT id, service_type, weekday, time, church_id FROM church_services WHERE id = ?", id)
 
 	elem := Service{}
-	err := row.Scan(&elem.ID, &elem.ServiceType, &elem.Schedule, &elem.ChurchID)
+	err := row.Scan(&elem.ID, &elem.ServiceType, &elem.Weekday, &elem.Time, &elem.ChurchID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -54,9 +55,9 @@ func (n *Service) CreateService() error {
 	db := sqlite.GetDBConnection()
 
 	result, err := db.Exec(`
-		INSERT INTO church_services (service_type, schedule, church_id)
-		VALUES (?, ?, ?)
-	`, n.ServiceType, n.Schedule, n.ChurchID)
+		INSERT INTO church_services (service_type, weekday, time, church_id)
+		VALUES (?, ?, ?, ?)
+	`, n.ServiceType, n.Weekday, n.Time, n.ChurchID)
 
 	if err != nil {
 		return err
@@ -77,9 +78,9 @@ func (n *Service) UpdateService() error {
 
 	_, err := db.Exec(`
 		UPDATE church_services
-		SET service_type = ?, schedule = ?, church_id = ?
+		SET service_type = ?, weekday = ?, time = ?, church_id = ?
 		WHERE id = ?
-	`, n.ServiceType, n.Schedule, n.ChurchID, n.ID)
+	`, n.ServiceType, n.Weekday, n.Time, n.ChurchID, n.ID)
 
 	if err != nil {
 		return err
