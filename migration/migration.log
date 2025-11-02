@@ -4105,3 +4105,9 @@
 2025-08-13 12:07:59,867 - INFO - Migration verification completed successfully
 2025-08-13 12:07:59,867 - INFO - Database migration completed successfully!
 2025-08-13 12:07:59,867 - INFO - Database connections closed
+2025-11-02 01:59:43,324 - INFO - Source database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise/songbooksofpraise-backend/himnos_coros.sqlite
+2025-11-02 01:59:43,325 - INFO - Target database: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise/songbooksofpraise-backend/songbooks_of_praise.sqlite
+2025-11-02 01:59:43,325 - INFO - Starting database migration...
+2025-11-02 01:59:43,325 - ERROR - Error connecting to databases: Source database not found: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise/songbooksofpraise-backend/himnos_coros.sqlite
+2025-11-02 01:59:43,325 - ERROR - Migration failed: Source database not found: /Users/benjaminrodriguez/Documents/Algoritmos/songbooksofpraise/songbooksofpraise-backend/himnos_coros.sqlite
+2025-11-02 01:59:43,325 - INFO - Database connections closed

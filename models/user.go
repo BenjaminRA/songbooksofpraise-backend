@@ -173,15 +173,12 @@ func (n *User) Login(email string, password string) (User, error) {
 }
 
 func (n *User) UpdateUser() error {
-	if CheckEmailTakenWithId(n.Email, n.ID) {
-		return fmt.Errorf("register.invalid.email")
-	}
-
 	db := sqlite.GetDBConnection()
 	n.UpdatedAt = time.Now().UTC()
 
-	_, err := db.Exec("UPDATE users SET first_name = ?, last_name = ?, email = ?, admin = ?, editor = ?, moderator = ?, verified = ?, updated_at = ? WHERE id = ?",
-		n.FirstName, n.LastName, n.Email, n.Admin, n.Editor, n.Moderator, n.Verified, n.UpdatedAt, n.ID)
+	// Update user but exclude email (email should not be changed)
+	_, err := db.Exec("UPDATE users SET first_name = ?, last_name = ?, admin = ?, editor = ?, moderator = ?, verified = ?, updated_at = ? WHERE id = ?",
+		n.FirstName, n.LastName, n.Admin, n.Editor, n.Moderator, n.Verified, n.UpdatedAt, n.ID)
 	if err != nil {
 		return err
 	}

@@ -5,3 +5,4 @@ tmp
 .vscode
 backend.songbooksofpraise.com.conf
 songbooks_of_praise.sqlite
+*.sqlite

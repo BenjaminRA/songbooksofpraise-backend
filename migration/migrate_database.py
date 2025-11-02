@@ -189,7 +189,7 @@ class DatabaseMigrator:
                     verified BOOLEAN DEFAULT FALSE,
                     in_verification BOOLEAN DEFAULT FALSE,
                     rejected BOOLEAN DEFAULT FALSE,
-                    owner_id INTEGER NOT NULL,
+                    owner_id INTEGER,
                     created_at DATETIME NOT NULL,
                     updated_at DATETIME NOT NULL,
                     FOREIGN KEY (owner_id) REFERENCES users(id)
@@ -204,8 +204,8 @@ class DatabaseMigrator:
                     user_id INTEGER NOT NULL,
                     created_at DATETIME NOT NULL,
                     updated_at DATETIME NOT NULL,
-                    FOREIGN KEY (songbook_id) REFERENCES songbooks(id),
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    FOREIGN KEY (songbook_id) REFERENCES songbooks(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )
             """)
             
@@ -300,6 +300,40 @@ class DatabaseMigrator:
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
+            """)
+            
+            # Password Reset Tokens Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    token TEXT NOT NULL UNIQUE,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens(user_id);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_expires ON password_reset_tokens(expires_at);
+            """)
+            
+            # Password Reset Tokens Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    token TEXT NOT NULL UNIQUE,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_user_id ON password_reset_tokens(user_id);
+                CREATE INDEX IF NOT EXISTS idx_password_reset_expires ON password_reset_tokens(expires_at);
             """)
             
             self.target_conn.commit()

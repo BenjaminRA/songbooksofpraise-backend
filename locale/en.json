@@ -15,6 +15,12 @@
   "password_reset.token_invalid": "Invalid or expired password reset token",
   "password_reset.success": "Password has been reset successfully",
   
+  "change_password.current_password_incorrect": "Current password is incorrect",
+  "change_password.success": "Password changed successfully",
+  
+  "user.delete.success": "Your account has been deleted successfully",
+  "user.update.success": "Your account has been updated successfully",
+  
   "email.password_reset.subject": "Reset Your Password",
   "email.password_reset.title": "Password Reset Request",
   "email.password_reset.preheader": "Reset your password to regain access",

@@ -134,7 +134,9 @@ func GetUser(c *gin.Context) {
 
 func Logout(c *gin.Context) {
 	auth.UnsetToken(c)
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logout successful",
+	})
 }
 
 func GetUsers(c *gin.Context) {
@@ -168,8 +170,10 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	user.Password = "" // Don't send password back
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user":    user,
+		"message": locale.GetLocalizedMessage(lang, "user.update.success"),
 	})
 }
 
@@ -189,7 +193,9 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, gin.H{
+		"message": locale.GetLocalizedMessage(lang, "user.delete.success"),
+	})
 }
 
 // ForgotPassword handles forgot password requests
@@ -268,3 +274,44 @@ func ResetPassword(c *gin.Context) {
 	})
 }
 
+// ChangePassword handles password change for authenticated users
+func ChangePassword(c *gin.Context) {
+	lang := c.Request.Context().Value("language").(string)
+
+	user, err := auth.RetrieveUser(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": locale.GetLocalizedMessage(lang, "session_token.invalid"),
+		})
+		return
+	}
+
+	var request map[string]string
+	c.BindJSON(&request)
+
+	currentPassword := request["current_password"]
+	newPassword := request["new_password"]
+
+	// Verify current password
+	_, err = user.Login(user.Email, currentPassword)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"error": locale.GetLocalizedMessage(lang, "change_password.current_password_incorrect"),
+		})
+		return
+	}
+
+	// Update to new password
+	user.Password = newPassword
+	err = user.UpdatePassword()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": locale.GetLocalizedMessage(lang, "change_password.success"),
+	})
+}

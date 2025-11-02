@@ -114,6 +114,7 @@ func main() {
 	router.POST("/auth/user", auth_handler.GetUser)
 	router.PUT("/auth/user", auth_handler.UpdateUser)
 	router.DELETE("/auth/user", auth_handler.DeleteUser)
+	router.POST("/auth/change-password", auth_handler.ChangePassword)
 	router.GET("/auth/users", auth_handler.GetUsers)
 	router.POST("/auth/verification", auth_handler.VerifyUserEmail)
 	router.POST("/auth/verification/resend", auth_handler.EmailVerificationResend)

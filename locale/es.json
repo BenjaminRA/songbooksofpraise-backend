@@ -15,6 +15,12 @@
   "password_reset.token_invalid": "Token de restablecimiento de contraseña inválido o expirado",
   "password_reset.success": "La contraseña ha sido restablecida exitosamente",
   
+  "change_password.current_password_incorrect": "La contraseña actual es incorrecta",
+  "change_password.success": "Contraseña cambiada exitosamente",
+  
+  "user.delete.success": "Tu cuenta ha sido eliminada exitosamente",
+  "user.update.success": "Tu cuenta ha sido actualizada exitosamente",
+  
   "email.password_reset.subject": "Restablece Tu Contraseña",
   "email.password_reset.title": "Solicitud de Restablecimiento de Contraseña",
   "email.password_reset.preheader": "Restablece tu contraseña para recuperar el acceso",
