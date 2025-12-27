@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -384,6 +385,33 @@ func SetSongbookVerificationStatus(id int, verified bool, inVerification bool, r
 	return err
 }
 
+func ExportCategoriesRecursive(db *sql.DB, sql *strings.Builder, category *Category) {
+	rows, err := db.Query("SELECT id, name, parent_category_id, songbook_id, created_at, updated_at FROM categories WHERE parent_category_id = ? AND songbook_id = ?", category.ID, category.SongbookID)
+	if err != nil {
+		return
+	}
+
+	for rows.Next() {
+		elem := Category{}
+		err := rows.Scan(&elem.ID, &elem.Name, &elem.ParentCategoryID, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		if err != nil {
+			continue
+		}
+
+		sql.WriteString(fmt.Sprintf("INSERT OR REPLACE INTO categories (id, name, parent_category_id, songbook_id, created_at, updated_at) VALUES (%d, %s, %d, %d, %s, %s);\n",
+			elem.ID,
+			helpers.SqlEscape(elem.Name),
+			*elem.ParentCategoryID,
+			*elem.SongbookID,
+			helpers.SqlEscape(elem.CreatedAt.Format("2006-01-02 15:04:05")),
+			helpers.SqlEscape(elem.UpdatedAt.Format("2006-01-02 15:04:05")),
+		))
+
+		ExportCategoriesRecursive(db, sql, &elem)
+	}
+	rows.Close()
+}
+
 // Export a single songbook as SQL script
 func (n *Songbook) ExportSongbookSQL() (string, error) {
 	db := sqlite.GetDBConnection()
@@ -413,6 +441,7 @@ func (n *Songbook) ExportSongbookSQL() (string, error) {
 	// Export categories
 	if len(songbook.Categories) > 0 {
 		// sql.WriteString("-- Categories\n")
+
 		for _, category := range songbook.Categories {
 			parentID := "NULL"
 			if category.ParentCategoryID != nil {
@@ -429,7 +458,10 @@ func (n *Songbook) ExportSongbookSQL() (string, error) {
 				parentID,
 				songbookID,
 				helpers.SqlEscape(category.CreatedAt.Format("2006-01-02 15:04:05")),
-				helpers.SqlEscape(category.UpdatedAt.Format("2006-01-02 15:04:05"))))
+				helpers.SqlEscape(category.UpdatedAt.Format("2006-01-02 15:04:05")),
+			))
+
+			ExportCategoriesRecursive(db, &sql, &category)
 		}
 		sql.WriteString("\n")
 	}
