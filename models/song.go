@@ -20,6 +20,7 @@ type Song struct {
 	Music           *string    `json:"music"`
 	MusicOnly       *string    `json:"music_only"`
 	YouTubeURL      *string    `json:"youtube_url"`
+	SpotifyURL      *string    `json:"spotify_url"`
 	Description     *string    `json:"description"`
 	Number          *int       `json:"number"`
 	VoicesAll       *string    `json:"voices_all"`
@@ -52,7 +53,7 @@ func (n *Song) songbookUpdatedAt() error {
 
 func (n *Song) GetAllSongs() ([]Song, error) {
 	db := sqlite.GetDBConnection()
-	rows, err := db.Query("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs")
+	rows, err := db.Query("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, spotify_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs")
 	if err != nil {
 		return []Song{}, err
 	}
@@ -61,7 +62,7 @@ func (n *Song) GetAllSongs() ([]Song, error) {
 	result := []Song{}
 	for rows.Next() {
 		elem := Song{}
-		err := rows.Scan(&elem.ID, &elem.Title, &elem.Lyrics, &elem.MusicSheet, &elem.Music, &elem.MusicOnly, &elem.YouTubeURL, &elem.Description, &elem.Number, &elem.VoicesAll, &elem.VoicesSoprano, &elem.VoicesContralto, &elem.VoicesTenor, &elem.VoicesBass, &elem.Transpose, &elem.ScrollSpeed, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
+		err := rows.Scan(&elem.ID, &elem.Title, &elem.Lyrics, &elem.MusicSheet, &elem.Music, &elem.MusicOnly, &elem.YouTubeURL, &elem.SpotifyURL, &elem.Description, &elem.Number, &elem.VoicesAll, &elem.VoicesSoprano, &elem.VoicesContralto, &elem.VoicesTenor, &elem.VoicesBass, &elem.Transpose, &elem.ScrollSpeed, &elem.SongbookID, &elem.CreatedAt, &elem.UpdatedAt)
 		if err != nil {
 			continue
 		}
@@ -74,8 +75,8 @@ func (n *Song) GetAllSongs() ([]Song, error) {
 func (n *Song) GetSongByID(id int) (Song, error) {
 	db := sqlite.GetDBConnection()
 	var result Song
-	err := db.QueryRow("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs WHERE id = ?", id).Scan(
-		&result.ID, &result.Title, &result.Lyrics, &result.MusicSheet, &result.Music, &result.MusicOnly, &result.YouTubeURL, &result.Description, &result.Number, &result.VoicesAll, &result.VoicesSoprano, &result.VoicesContralto, &result.VoicesTenor, &result.VoicesBass, &result.Transpose, &result.ScrollSpeed, &result.SongbookID, &result.CreatedAt, &result.UpdatedAt)
+	err := db.QueryRow("SELECT id, title, lyrics, music_sheet, music, music_only, youtube_url, spotify_url, description, number, voices_all, voices_soprano, voices_contralto, voices_tenor, voices_bass, transpose, scroll_speed, songbook_id, created_at, updated_at FROM songs WHERE id = ?", id).Scan(
+		&result.ID, &result.Title, &result.Lyrics, &result.MusicSheet, &result.Music, &result.MusicOnly, &result.YouTubeURL, &result.SpotifyURL, &result.Description, &result.Number, &result.VoicesAll, &result.VoicesSoprano, &result.VoicesContralto, &result.VoicesTenor, &result.VoicesBass, &result.Transpose, &result.ScrollSpeed, &result.SongbookID, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
 		return Song{}, err
 	}
@@ -152,8 +153,8 @@ func (n *Song) CreateSong() error {
 	n.CreatedAt = time.Now().UTC()
 	n.UpdatedAt = time.Now().UTC()
 
-	result, err := db.Exec("INSERT INTO songs (title, lyrics, youtube_url, description, number, transpose, scroll_speed, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		n.Title, n.Lyrics, n.YouTubeURL, n.Description, n.Number, n.Transpose, n.ScrollSpeed, n.SongbookID, n.CreatedAt, n.UpdatedAt)
+	result, err := db.Exec("INSERT INTO songs (title, lyrics, youtube_url, spotify_url, description, number, transpose, scroll_speed, songbook_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		n.Title, n.Lyrics, n.YouTubeURL, n.SpotifyURL, n.Description, n.Number, n.Transpose, n.ScrollSpeed, n.SongbookID, n.CreatedAt, n.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -284,8 +285,8 @@ func (n *Song) UpdateSong() error {
 		}
 	}
 
-	_, err = db.Exec("UPDATE songs SET title = ?, lyrics = ?, youtube_url = ?, description = ?, number = ?, songbook_id = ?, transpose = ?, scroll_speed = ?, updated_at = ? WHERE id = ?",
-		n.Title, n.Lyrics, n.YouTubeURL, n.Description, n.Number, n.SongbookID, n.Transpose, n.ScrollSpeed, n.UpdatedAt, n.ID)
+	_, err = db.Exec("UPDATE songs SET title = ?, lyrics = ?, youtube_url = ?, spotify_url = ?, description = ?, number = ?, songbook_id = ?, transpose = ?, scroll_speed = ?, updated_at = ? WHERE id = ?",
+		n.Title, n.Lyrics, n.YouTubeURL, n.SpotifyURL, n.Description, n.Number, n.SongbookID, n.Transpose, n.ScrollSpeed, n.UpdatedAt, n.ID)
 	if err != nil {
 		return err
 	}
