@@ -51,9 +51,9 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-			"http://127.0.0.1:5500",
 			"http://localhost:3000",
 			"http://admin:3000",
+			"https://support.songbooksofpraise.com",
 			"https://admin.songbooksofpraise.com",
 			"https://backend.songbooksofpraise.com",
 			"https://songbooksofpraise.com",
