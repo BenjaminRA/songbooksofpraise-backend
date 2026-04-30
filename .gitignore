@@ -6,3 +6,4 @@ tmp
 backend.songbooksofpraise.com.conf
 songbooks_of_praise.sqlite
 *.sqlite
+support-page

@@ -16,6 +16,7 @@ import (
 	files_handler "github.com/BenjaminRA/himnario-backend/handlers/files"
 	songbooks_handler "github.com/BenjaminRA/himnario-backend/handlers/songbooks"
 	songs_handler "github.com/BenjaminRA/himnario-backend/handlers/songs"
+	support_handler "github.com/BenjaminRA/himnario-backend/handlers/support"
 	"github.com/BenjaminRA/himnario-backend/middlewares"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,7 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
+			"http://127.0.0.1:5500",
 			"http://localhost:3000",
 			"http://admin:3000",
 			"https://admin.songbooksofpraise.com",
@@ -105,6 +107,9 @@ func main() {
 			"timestamp": time.Now().UTC().Unix(),
 		})
 	})
+
+	// Support contact form (public)
+	router.POST("/support/contact", support_handler.PostSupportContact)
 
 	router.POST("/files", files_handler.PostFile)
 
