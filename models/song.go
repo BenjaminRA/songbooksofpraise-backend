@@ -117,7 +117,11 @@ func (n *Song) createS3File(fieldName string, bucket string) error {
 		return fmt.Errorf("field %s is not a string pointer", actualFieldName)
 	}
 
-	if value != nil && *value == "__same__" {
+	if value == nil {
+		return nil
+	}
+
+	if *value == "__same__" {
 		return nil
 	}
 
